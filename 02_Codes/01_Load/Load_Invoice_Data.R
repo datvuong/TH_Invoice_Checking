@@ -14,10 +14,13 @@ LoadInvoiceData <- function(invoicePath) {
   
   output <- tryCatch({
     
+    setClass("myNumeric")
+    setAs("character","myNumeric", function(from) as.numeric(gsub('[^0-9\\.]','',from)))
+    
     excelFiles <- list.files(invoicePath)
     excelFiles <- excelFiles[grepl("^[^~\\$].*\\.(xls|xlsx|csv)$", excelFiles)]
     invoiceData <- NULL
-    colNames <- c("line_id", "3pl_name", "package_pickup_date",
+    colNames <- c("3pl_name", "package_pickup_date",
                   "package_pod_date", "invoice_number", "package_number",
                   "tracking_number", "tracking_number_rts", "order_number",
                   "package_volume", "package_height", "package_width",
@@ -30,7 +33,7 @@ LoadInvoiceData <- function(invoicePath) {
     for (ifile in excelFiles) {
       if (file_ext(ifile) %in% c("xls", "xlsx")) {
         wb <- loadWorkbook(file.path(invoicePath, ifile))
-        invoiceFileData <- readWorksheet(wb, 1, colTypes = c(XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING,
+        invoiceFileData <- readWorksheet(wb, 1, colTypes = c(XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING,
                                                              XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING,
                                                              XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING,
                                                              XLC$DATA_TYPE.NUMERIC, XLC$DATA_TYPE.NUMERIC, XLC$DATA_TYPE.NUMERIC,
@@ -41,20 +44,21 @@ LoadInvoiceData <- function(invoicePath) {
                                                              XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING))
         names(invoiceFileData) <- colNames
       } else {
-        invoiceFileData <- read_csv(file = file.path(invoicePath, ifile),
+        invoiceFileData <- read_csv(file.path(invoicePath, ifile), skip = 1,
                                     col_names = colNames,
-                                    col_types = c("character", "character", "character",
-                                                  "character", "character", "character",
-                                                  "character", "character", "character",
-                                                  "numeric", "numeric", "numeric",
-                                                  "numeric", "numeric", "numeric",
-                                                  "numeric", "numeric", "numeric",
-                                                  "numeric", "numeric", "numeric",
-                                                  "numeric", "numeric", "character",
-                                                  "character", "character", "character"))
+                                    col_types = cols(col_character(), col_character(),
+                                                  col_character(), col_character(), col_character(),
+                                                  col_character(), col_character(), col_character(),
+                                                  col_double(), col_double(), col_double(),
+                                                  col_double(), col_double(), col_double(),
+                                                  col_double(), col_double(), col_double(),
+                                                  col_double(), col_double(), col_double(),
+                                                  col_double(), col_double(), col_character(),
+                                                  col_character(), col_character(), col_character()))
       }
       
       invoiceFileData %<>%
+        mutate(package_chargeable_weight = package_weight) %>%
         mutate(rawFile = ifile)
       
       if (is.null(fullData)) {

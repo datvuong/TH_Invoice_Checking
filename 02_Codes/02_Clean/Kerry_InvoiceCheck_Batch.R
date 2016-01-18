@@ -1,13 +1,13 @@
-source("3_Script/1_Code/00_init.R")
+source("02_Codes/00_init.R")
 
 tryCatch({
   
   flog.info("Initial Setup", name = reportName)
   
-  source("3_Script/1_Code/01_Loading/Load_Invoice_Data.R")
+  source("02_Codes/01_Load/Load_Invoice_Data.R")
   
-  load("1_Input/RData/packageDataBased.RData")
-  invoiceData <- LoadInvoiceData("1_Input/LEX/01_Invoice")
+  load("01_Input/RData/packageDataBased.RData")
+  invoiceData <- LoadInvoiceData("01_Input/Kerry/01_Invoice")
   
   mergedOMSData <- left_join(invoiceData,
                              packageDataBased,
@@ -21,26 +21,25 @@ tryCatch({
   
   # Existence Flag
   mergedOMSData %<>%
-    mutate(existence_flag = ifelse(!is.na(RTS_Date), "OKAY", "NOT_OKAY"))
+    mutate(existence_flag = ifelse(!is.na(rts), "OKAY", "NOT_OKAY"))
   
   # Map Rate Card
-  source("3_Script/1_Code/03_Processing/LEX/LEX_MapRateCard.R")
-  mergedOMSData_rate <- MapRateCard(mergedOMSData, "1_Input/LEX/02_Ratecards/LEX Rate Card-Final to Lzd.xlsx")
+  source("02_Codes/02_Clean/Kerry/Kerry_MapRateCard.R")
+  mergedOMSData_rate <- MapRateCard(mergedOMSData, 
+                                    rateCardFilePath =  "01_Input/Kerry/02_Ratecards/Kerry_rates.xlsx",
+                                    postalCodePath =  "01_Input/Kerry/04_Postalcode/Kerry_postalcode.xlsx")
   
   # Rate Calculation 
   mergedOMSData_rate %<>%
-    mutate(carrying_fee_laz = Initial.1st.Kg + (package_chargeable_weight - 1) * Next.Kg) %>%
-    mutate(insurance_fee_laz = ifelse((paidPrice + shippingFee + shippingSurcharge) < 1000000, 2500,
-                                      (paidPrice + shippingFee + shippingSurcharge) * Insurance.Charge)) %>%
-    mutate(cod_fee_laz = ifelse(payment_method == "CashOnDelivery",
-                                (paidPrice + shippingFee + shippingSurcharge) * COD.Fee,
-                                0))
+    mutate(carrying_fee_laz = Rates) %>%
+    mutate(cod_fee_laz = round(ifelse(payment_method == "CashOnDelivery",
+                                (paidPrice + shippingFee + shippingSurcharge) * 0.028, 0),
+                               2))
   mergedOMSData_rate %<>%
     mutate(carrying_fee_flag = ifelse(carrying_fee_laz >= carrying_fee, "OKAY", "NOT_OKAY")) %>%
-    mutate(insurance_fee_flag = ifelse(insurance_fee_laz >= insurance_fee, "OKAY", "NOT_OKAY")) %>%
     mutate(cod_fee_flag = ifelse(cod_fee_laz >= cod_fee, "OKAY", "NOT_OKAY"))
   
-  paidInvoiceData <- LoadInvoiceData("1_Input/LEX/03_Paid_Invoice/")
+  paidInvoiceData <- LoadInvoiceData("01_Input/Kerry/03_Paid_Invoice")
   
   paidInvoice <- NULL
   paidInvoiceList <- NULL
@@ -62,9 +61,9 @@ tryCatch({
                                            paidInvoiceList[tracking_number,]$InvoiceFile,"")))
   
   mergedOMSData_final <- mergedOMSData_rate %>%
-    select(-c(level_4_code, level_4_customer_address_region_type, level_4_fk_customer_address_region,
-              level_3_code, level_3_customer_address_region_type, level_3_fk_customer_address_region,
-              level_2_code, level_2_customer_address_region_type, level_2_fk_customer_address_region))
+    select(-c(level_7_code, level_7_customer_address_region_type, level_7_fk_customer_address_region,
+              level_6_code, level_6_customer_address_region_type, level_6_fk_customer_address_region,
+              level_5_code, level_5_customer_address_region_type, level_5_fk_customer_address_region))
   
   
   flog.info("Writing Result to csv format!!!", name = reportName)
