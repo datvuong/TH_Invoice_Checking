@@ -72,7 +72,7 @@ tryCatch({
   for (iFile in invoiceFiles) {
     fileName <- gsub(".xls.*$", "_checked.csv", iFile)
     fileData <-  as.data.frame(mergedOMSData %>% filter(rawFile == iFile))
-    write.csv2(fileData, file.path("2_Output/LEX", fileName),
+    write.csv2(fileData, file.path("05_Output/Kerry", fileName),
                row.names = FALSE)
   }
   
