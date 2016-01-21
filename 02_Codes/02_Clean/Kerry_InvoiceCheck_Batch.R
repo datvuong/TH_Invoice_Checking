@@ -68,11 +68,11 @@ tryCatch({
   
   flog.info("Writing Result to csv format!!!", name = reportName)
   
-  invoiceFiles <- unique(mergedOMSData$rawFile)
+  invoiceFiles <- unique(mergedOMSData_final$rawFile)
   for (iFile in invoiceFiles) {
     fileName <- gsub(".xls.*$", "_checked.csv", iFile)
-    fileData <-  as.data.frame(mergedOMSData %>% filter(rawFile == iFile))
-    write.csv2(fileData, file.path("05_Output/Kerry", fileName),
+    fileData <-  as.data.frame(mergedOMSData_final %>% filter(rawFile == iFile))
+    write.csv(fileData, file.path("05_Output/Kerry", fileName),
                row.names = FALSE)
   }
   

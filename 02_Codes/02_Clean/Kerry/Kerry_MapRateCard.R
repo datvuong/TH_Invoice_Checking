@@ -32,16 +32,16 @@ MapRateCard <- function(mergedOMSData, rateCardFilePath, postalCodePath) {
       mutate(area_revised = ifelse(existence_flag == "NOT_OKAY", NA, area_revised))
     
     mergedOMSData_rev %<>%
-      mutate(Min = ifelse(package_chargeable_weight <= 1, 0.1,
-                          ifelse(package_chargeable_weight <= 3, 1.1,
-                                 ifelse(package_chargeable_weight <= 5, 3.1,
-                                        ifelse(package_chargeable_weight <= 10, 5.1,
-                                               ifelse(package_chargeable_weight <= 15, 10.1, 15.1)))))) %>%
-      mutate(Max = ifelse(package_chargeable_weight <= 1, 1,
-                          ifelse(package_chargeable_weight <= 3, 3,
-                                 ifelse(package_chargeable_weight <= 5, 5,
-                                        ifelse(package_chargeable_weight <= 10, 10,
-                                               ifelse(package_chargeable_weight <= 15, 15, 20))))))
+      mutate(Min = ifelse(package_weight <= 1, 0.1,
+                          ifelse(package_weight <= 3, 1.1,
+                                 ifelse(package_weight <= 5, 3.1,
+                                        ifelse(package_weight <= 10, 5.1,
+                                               ifelse(package_weight <= 15, 10.1, 15.1)))))) %>%
+      mutate(Max = ifelse(package_weight <= 1, 1,
+                          ifelse(package_weight <= 3, 3,
+                                 ifelse(package_weight <= 5, 5,
+                                        ifelse(package_weight <= 10, 10,
+                                               ifelse(package_weight <= 15, 15, 20))))))
     
     mergedOMSData_rev <- left_join(mergedOMSData_rev, rateCard,
                                    by = c("area_revised" = "Zone",
