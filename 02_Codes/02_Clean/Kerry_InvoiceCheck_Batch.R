@@ -77,7 +77,7 @@ tryCatch({
   
   
   flog.info("Writing Result to csv format!!!", name = reportName)
-  source("02_Codes/04_Reports/SummaryReport.R")
+  # source("02_Codes/04_Reports/SummaryReport.R")
   source("02_Codes/04_Reports/OutputRawData.R")
   
 #   exceedThresholdTrackingNumber <- finalOutput %>%
@@ -92,7 +92,7 @@ tryCatch({
   OutputRawData(mergedOMSData_final, paste0("05_Output/Kerry/checkedInvoice_",dateReport,".csv"))
 #   OutputRawData(exceedThresholdTrackingNumber, paste0("2_Output/gdex/exceedThresholdTrackingNumber_",dateReport,".csv"))
 #   OutputRawData(notFoundTrackingNumber, paste0("2_Output/gdex/notFoundTrackingNumber_",dateReport,".csv"))
-  SummaryReport(mergedOMSData_final, paste0("05_Output/Kerry/summaryReport_",dateReport,".csv"))
+  # SummaryReport(mergedOMSData_final, paste0("05_Output/Kerry/summaryReport_",dateReport,".csv"))
   
   
 #   invoiceFiles <- unique(mergedOMSData_final$rawFile)
