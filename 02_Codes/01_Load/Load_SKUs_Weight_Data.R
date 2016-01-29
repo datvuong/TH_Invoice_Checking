@@ -1,15 +1,14 @@
-LoadInvoiceData <- function(invoicePath) {
+LoadSKUsWeight <- function(SKUsPath) {
   suppressMessages({
     require(readr)
     require(dplyr)
     require(tools)
     require(magrittr)
     require(methods)
-    require(XLConnect)
     require(futile.logger)
   })
   
-  functionName <- "LoadInvoiceData"
+  functionName <- "LoadSKUsWeight"
   flog.info(paste("Function", functionName, "started"), name = reportName)
   
   output <- tryCatch({
@@ -17,12 +16,12 @@ LoadInvoiceData <- function(invoicePath) {
     setClass("myNumeric")
     setAs("character","myNumeric", function(from) as.numeric(gsub('[^0-9\\.]','',from)))
     
-    excelFiles <- list.files(invoicePath)
+    excelFiles <- list.files(path = folder, pattern = "*.csv") list.files(invoicePath)
     excelFiles <- excelFiles[grepl("^[^~\\$].*\\.(xls|xlsx|csv)$", excelFiles)]
     invoiceData <- NULL
-    colNames <- c("line_id", "3pl_name", "package_pickup_date",
+    colNames <- c("3pl_name", "package_pickup_date",
                   "package_pod_date", "invoice_number", "package_number",
-                  "tracking_number", "tracking_number_rts", "order_number", "delivery_status", 
+                  "tracking_number", "tracking_number_rts", "order_number",
                   "package_volume", "package_height", "package_width",
                   "package_length", "package_weight", "package_chargeable_weight",
                   "carrying_fee", "redelivery_fee", "rejection_fee",
@@ -33,9 +32,9 @@ LoadInvoiceData <- function(invoicePath) {
     for (ifile in excelFiles) {
       if (file_ext(ifile) %in% c("xls", "xlsx")) {
         wb <- loadWorkbook(file.path(invoicePath, ifile))
-        invoiceFileData <- readWorksheet(wb, 1, colTypes = c(XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING,
+        invoiceFileData <- readWorksheet(wb, 1, colTypes = c(XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING,
                                                              XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING,
-                                                             XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING,
+                                                             XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING,
                                                              XLC$DATA_TYPE.NUMERIC, XLC$DATA_TYPE.NUMERIC, XLC$DATA_TYPE.NUMERIC,
                                                              XLC$DATA_TYPE.NUMERIC, XLC$DATA_TYPE.NUMERIC, XLC$DATA_TYPE.NUMERIC,
                                                              XLC$DATA_TYPE.NUMERIC, XLC$DATA_TYPE.NUMERIC, XLC$DATA_TYPE.NUMERIC,
@@ -46,9 +45,9 @@ LoadInvoiceData <- function(invoicePath) {
       } else {
         invoiceFileData <- read_csv(file.path(invoicePath, ifile), skip = 1,
                                     col_names = colNames,
-                                    col_types = cols(col_character(), col_character(), col_character(),
+                                    col_types = cols(col_character(), col_character(),
                                                   col_character(), col_character(), col_character(),
-                                                  col_character(), col_character(), col_character(), col_character(),
+                                                  col_character(), col_character(), col_character(),
                                                   col_double(), col_double(), col_double(),
                                                   col_double(), col_double(), col_double(),
                                                   col_double(), col_double(), col_double(),
@@ -59,7 +58,6 @@ LoadInvoiceData <- function(invoicePath) {
       
       invoiceFileData %<>%
         mutate(package_chargeable_weight = package_weight) %>%
-        mutate(tracking_number = toupper(tracking_number)) %>%
         mutate(rawFile = ifile)
       
       if (is.null(fullData)) {
