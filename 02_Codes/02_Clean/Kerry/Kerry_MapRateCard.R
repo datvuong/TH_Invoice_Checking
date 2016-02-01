@@ -21,27 +21,39 @@ MapRateCard <- function(mergedOMSData, rateCardFilePath, postalCodePath) {
     
     postalCode %<>%
       mutate(area_revised = ifelse(area == "Greater Bangkok", "Zone_A",
-                                   ifelse(area == "Remote Are", "Remote_area", "Zone_B")))
+                                   ifelse(area == "Remote Area", "Remote_area", "Zone_B")))
     
     mergedOMSData_rev <- left_join(mergedOMSData, 
                                    postalCode %>%
                                      select(postal_code, area_revised),
                                    by = c("level_7_name" = "postal_code"))
+    mergedOMSData_rev %<>% mutate(dest_area = area_revised) %>%
+      select(-c(area_revised))
+    mergedOMSData_rev <- left_join(mergedOMSData_rev, 
+                                   postalCode %>%
+                                     select(postal_code, area_revised),
+                                   by = c("origin_branch" = "postal_code"))
+    mergedOMSData_rev %<>% mutate(origin_area = area_revised) %>%
+      select(-c(area_revised))
+    
+    mergedOMSData_rev %<>% mutate(area_revised = ifelse(origin_area == "Zone_A" & dest_area == "Zone_A", "Zone_A", 
+                                                        ifelse(origin_area == "Remote Area" | dest_area == "Remote Area", "Remote_area", "Zone_B")))
+    
     mergedOMSData_rev %<>%
       mutate(area_revised = ifelse(is.na(area_revised), "Zone_B", area_revised)) %>%
       mutate(area_revised = ifelse(existence_flag == "NOT_OKAY", NA, area_revised))
     
     mergedOMSData_rev %<>%
-      mutate(Min = ifelse(package_chargeable_weight <= 1, 0.1,
-                          ifelse(package_chargeable_weight <= 3, 1.1,
-                                 ifelse(package_chargeable_weight <= 5, 3.1,
-                                        ifelse(package_chargeable_weight <= 10, 5.1,
-                                               ifelse(package_chargeable_weight <= 15, 10.1, 15.1)))))) %>%
-      mutate(Max = ifelse(package_chargeable_weight <= 1, 1,
-                          ifelse(package_chargeable_weight <= 3, 3,
-                                 ifelse(package_chargeable_weight <= 5, 5,
-                                        ifelse(package_chargeable_weight <= 10, 10,
-                                               ifelse(package_chargeable_weight <= 15, 15, 20))))))
+      mutate(Min = ifelse(calculatedWeight <= 1, 0.1,
+                          ifelse(calculatedWeight <= 3, 1.1,
+                                 ifelse(calculatedWeight <= 5, 3.1,
+                                        ifelse(calculatedWeight <= 10, 5.1,
+                                               ifelse(calculatedWeight <= 15, 10.1, 15.1)))))) %>%
+      mutate(Max = ifelse(calculatedWeight <= 1, 1,
+                          ifelse(calculatedWeight <= 3, 3,
+                                 ifelse(calculatedWeight <= 5, 5,
+                                        ifelse(calculatedWeight <= 10, 10,
+                                               ifelse(calculatedWeight <= 15, 15, 20))))))
     
     mergedOMSData_rev <- left_join(mergedOMSData_rev, rateCard,
                                    by = c("area_revised" = "Zone",
