@@ -4,13 +4,13 @@ suppressMessages({
     require(tools)
     require(magrittr)
     require(methods)
-    require(logging)
+    require(futile.logger)
   })
   
   functionName <- "OutputRawData"
-  loginfo(paste("Function", functionName, "started"), logger = reportName)
+  flog.info(paste("Function", functionName, "started"), name = reportName)
   
-  tryCatch({
+  output <- tryCatch({
     
     write.csv(checkedInvoiceData, outputFile, row.names = FALSE)
     
@@ -19,8 +19,11 @@ suppressMessages({
     }
     
   }, error = function(err) {
-    logerror(paste(functionName, err, sep = " - "), logger = consoleLog)
+    flog.error(paste(functionName, err, sep = " - "), name = reportName)
   }, finally = {
-    loginfo(paste(functionName, "ended"), logger = reportName)
+    flog.info(paste(functionName, "ended"), name = reportName)
   })
+  
+  output
 }
+
