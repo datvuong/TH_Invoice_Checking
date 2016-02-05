@@ -1,4 +1,4 @@
-LoadSKUsWeight <- function(SKUsPath) {
+LoadCODInvoice <- function(CODPath) {
   suppressMessages({
     require(readr)
     require(dplyr)
@@ -8,7 +8,7 @@ LoadSKUsWeight <- function(SKUsPath) {
     require(futile.logger)
   })
   
-  functionName <- "LoadSKUsWeight"
+  functionName <- "LoadCODInvoice"
   flog.info(paste("Function", functionName, "started"), name = reportName)
   
   output <- tryCatch({
@@ -19,13 +19,7 @@ LoadSKUsWeight <- function(SKUsPath) {
     excelFiles <- list.files(path = folder, pattern = "*.csv") list.files(invoicePath)
     excelFiles <- excelFiles[grepl("^[^~\\$].*\\.(xls|xlsx|csv)$", excelFiles)]
     invoiceData <- NULL
-    colNames <- c("3pl_name", "package_pickup_date",
-                  "package_pod_date", "invoice_number", "package_number",
-                  "tracking_number", "tracking_number_rts", "order_number",
-                  "package_volume", "package_height", "package_width",
-                  "package_length", "package_weight", "package_chargeable_weight",
-                  "carrying_fee", "redelivery_fee", "rejection_fee",
-                  "cod_fee", "special_area_fee", "special_handling_fee",
+    colNames <- c("tracking_number", "order_number", "destination", "cash", "cod_fee", "special_area_fee", "special_handling_fee",
                   "insurance_fee", "vat", "origin_branch",
                   "destination_branch", "delivery_zone_zip_code", "rate_type")
     fullData <- NULL

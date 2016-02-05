@@ -37,7 +37,7 @@ MapRateCard <- function(mergedOMSData, rateCardFilePath, postalCodePath) {
       select(-c(area_revised))
     
     mergedOMSData_rev %<>% mutate(area_revised = ifelse(origin_area == "Zone_A" & dest_area == "Zone_A", "Zone_A", 
-                                                        ifelse(origin_area == "Remote Area" | dest_area == "Remote Area", "Remote_area", "Zone_B")))
+                                                        ifelse(origin_area == "Remote_area" | dest_area == "Remote_area", "Remote_area", "Zone_B")))
     
     mergedOMSData_rev %<>%
       mutate(area_revised = ifelse(is.na(area_revised), "Zone_B", area_revised)) %>%
