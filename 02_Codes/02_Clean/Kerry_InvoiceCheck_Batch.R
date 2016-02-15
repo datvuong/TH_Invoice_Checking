@@ -19,11 +19,11 @@ tryCatch({
                                    package_number.y)) %>%
     select(-c(package_number.x, package_number.y))
   skusActualWeight <- read_csv(paste0("01_Input/", "skus_actual_weight_201512.csv"), skip = 1,  
-                               col_names = c("skus","sum_of_TN","minWeight","maxWeight","medWeight","meanWeight"), 
+                               col_names = c("sku","sum_of_TN","minWeight","maxWeight","medWeight","meanWeight"), 
                                col_types = cols(col_character(), col_double(), col_double(), col_double(),col_double(), col_double())
   )
-  mergedOMSData %<>% mutate(skus = substr(skus, 1, 16))
-  mergedOMSData <- left_join(mergedOMSData, skusActualWeight %>% select(skus, medWeight), by = c("skus" = "skus"))
+  mergedOMSData %<>% mutate(sku = substr(sku, 1, 16))
+  mergedOMSData <- left_join(mergedOMSData, skusActualWeight %>% select(sku, medWeight), by = c("sku" = "sku"))
   mergedOMSData %<>% mutate(is_medWeight = ifelse(itemsCount == 1, 1, 0)) %>%
     mutate(calculatedWeight = ifelse(itemsCount == 1 & !is.na(medWeight) & (package_chargeable_weight - medWeight) > 2, medWeight, package_chargeable_weight))
   # Existence Flag
@@ -71,7 +71,10 @@ tryCatch({
                                            paidInvoiceList[tracking_number,]$InvoiceFile,"")))
   
   mergedOMSData_final <- mergedOMSData_rate %>%
-    select(-c(level_7_code, level_7_customer_address_region_type, level_7_fk_customer_address_region,
+    select(-c(id_sales_order_item, bob_id_sales_order_item, fk_sales_order, fk_sales_order_item_status, fk_marketplace_merchant,
+              product_name, fk_package, id_package_dispatching, fk_shipment_provider, id_seller,
+              paidPrice, shippingFee, shippingSurcharge, skus_names, missingActualWeight, missingVolumetricDimension,
+              level_7_code, level_7_customer_address_region_type, level_7_fk_customer_address_region,
               level_6_code, level_6_customer_address_region_type, level_6_fk_customer_address_region,
               level_5_code, level_5_customer_address_region_type, level_5_fk_customer_address_region))
   

@@ -26,14 +26,15 @@ MapRateCard <- function(mergedOMSData, rateCardFilePath, postalCodePath) {
     mergedOMSData_rev <- left_join(mergedOMSData, 
                                    postalCode %>%
                                      select(postal_code, area_revised),
-                                   by = c("level_7_name" = "postal_code"))
-    mergedOMSData_rev %<>% mutate(dest_area = area_revised) %>%
+                                   by = c("origin_branch" = "postal_code"))
+    mergedOMSData_rev %<>% mutate(origin_area = area_revised) %>%
       select(-c(area_revised))
+    
     mergedOMSData_rev <- left_join(mergedOMSData_rev, 
                                    postalCode %>%
                                      select(postal_code, area_revised),
-                                   by = c("origin_branch" = "postal_code"))
-    mergedOMSData_rev %<>% mutate(origin_area = area_revised) %>%
+                                   by = c("level_7_name" = "postal_code"))
+    mergedOMSData_rev %<>% mutate(dest_area = area_revised) %>%
       select(-c(area_revised))
     
     mergedOMSData_rev %<>% mutate(area_revised = ifelse(origin_area == "Zone_A" & dest_area == "Zone_A", "Zone_A", 
