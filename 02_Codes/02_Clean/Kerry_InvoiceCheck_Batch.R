@@ -57,7 +57,7 @@ tryCatch({
   mergedOMSData_rate %<>%
     mutate(carrying_fee_flag = ifelse(carrying_fee_laz >= carrying_fee, "OKAY", "NOT_OKAY")) %>%
     mutate(cod_fee_flag = ifelse(cod_fee - cod_fee_laz > 0.05 , "NOT_OKAY", "OKAY")) %>%
-    mutate(cod_fee_fin = ifelse(cod_fee_fin - cod_fee_laz > 0.05, "NOT_OKAY", "OKAY" ))
+    mutate(cod_fee_fin_flag = ifelse(cod_fee_fin - cod_fee_laz > 0.05, "NOT_OKAY", "OKAY" ))
   
   mergedOMSData_rate %<>%
     mutate(status_flag = ifelse(delivery_status == "Delivery" & !is.na(cancelled) & (shipped >= cancelled | is.na(shipped)), "Delivery_Cancelled", 
@@ -87,6 +87,8 @@ tryCatch({
   mergedOMSData_final <- mergedOMSData_rate %>%
     select(-c(id_sales_order_item, bob_id_sales_order_item, fk_sales_order, fk_sales_order_item_status, 
               product_name, id_seller, paidPrice, shippingFee, shippingSurcharge, skus_names, missingActualWeight, missingVolumetricDimension,
+              shipping_fee,shipping_discount_amount,shipping_surcharge,
+              ward,city,fk_customer_address_region,level_7_name,level_6_name,level_5_name,
               level_7_code, level_7_customer_address_region_type, level_7_fk_customer_address_region,
               level_6_code, level_6_customer_address_region_type, level_6_fk_customer_address_region,
               level_5_code, level_5_customer_address_region_type, level_5_fk_customer_address_region))
