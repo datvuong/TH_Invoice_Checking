@@ -20,12 +20,13 @@ tryCatch({
     select(-c(package_number.x, package_number.y))
   skusActualWeight <- read_csv(paste0("01_Input/", "skus_actual_weight_201512.csv"), skip = 1,  
                                col_names = c("sku","sum_of_TN","minWeight","maxWeight","medWeight","meanWeight"), 
-                               col_types = cols(col_character(), col_double(), col_double(), col_double(),col_double(), col_double())
-  )
+                               col_types = cols(col_character(), col_double(), col_double(), col_double(),col_double(), col_double()))
   mergedOMSData %<>% mutate(sku = substr(sku, 1, 16))
   mergedOMSData <- left_join(mergedOMSData, skusActualWeight %>% select(sku, medWeight), by = c("sku" = "sku"))
-  mergedOMSData %<>% mutate(is_medWeight = ifelse(itemsCount == 1, 1, 0)) %>%
-    mutate(calculatedWeight = ifelse(itemsCount == 1 & !is.na(medWeight) & (package_chargeable_weight - medWeight) > 2, medWeight, package_chargeable_weight))
+  mergedOMSData %<>% mutate(is_medWeight = ifelse(itemsCount == 1 & !is.na(medWeight), 1, 0)) %>%
+    mutate(calculatedWeight = ifelse(itemsCount == 1 & !is.na(medWeight) & ((package_chargeable_weight <= 5 & (package_chargeable_weight - medWeight) > 0.2 * package_chargeable_weight) |
+                                                                            (package_chargeable_weight <= 20 & (package_chargeable_weight - medWeight) > 0.1 * package_chargeable_weight) | 
+                                                                            (package_chargeable_weight > 20 & (package_chargeable_weight - medWeight) > 2)), medWeight, package_chargeable_weight))
   # Existence Flag
   mergedOMSData %<>%
     mutate(existence_flag = ifelse(!is.na(rts), "OKAY", "NOT_OKAY"))
@@ -33,20 +34,33 @@ tryCatch({
   # Map Rate Card
   source("02_Codes/02_Clean/Kerry/Kerry_MapRateCard.R")
   mergedOMSData_rate <- MapRateCard(mergedOMSData, 
-                                    rateCardFilePath =  "01_Input/Kerry/02_Ratecards/Kerry_rates.xlsx",
-                                    postalCodePath =  "01_Input/Kerry/04_Postalcode/Kerry_postalcode.xlsx")
+                                    rateCardFilePath =  "01_Input/Kerry/02_Ratecards/Kerry_rates.csv",
+                                    postalCodePath =  "01_Input/Kerry/04_Postalcode/Kerry_postalcode.csv")
   
   # Rate Calculation 
+  codFinData <- read_csv(paste0("01_Input/Kerry/02_COD/", "COD_FinData_201511.csv"), skip = 1,
+                         col_names = c("tracking_number", "tracking_number_ref", "pickupDate", "destination", 
+                                       "cash", "cod_surcharge", "bach_date", "type", "quarter"),
+                         col_types = cols(col_character(), col_character(), col_character(), col_character(),
+                                          col_double(), col_double(), col_character(), col_character(), col_character()))
+  codFinData %<>% 
+    mutate(tracking_number = ifelse(substr(tracking_number, 1, 1) == "1", tracking_number_ref, tracking_number)) %>%
+    mutate(tracking_number = toupper(tracking_number))
+  mergedOMSData_rate <- left_join(mergedOMSData_rate, codFinData[, c(1,5)], by = c("tracking_number" = "tracking_number"))
+  
   mergedOMSData_rate %<>%
-    mutate(carrying_fee_laz = Rates) %>%
+    mutate(carrying_fee_laz = ifelse(Max == 99, (ceiling(calculatedWeight) - 20) * 10 + Rates, Rates)) %>%
     mutate(cod_fee_laz = round(ifelse(payment_method == "CashOnDelivery",
-                                (paidPrice + shippingFee + shippingSurcharge) * 0.028, 0),
-                               2)) 
+                                (paidPrice + shippingFee + shippingSurcharge) * 0.028, 0), 2)) %>%
+    mutate(cod_fee_fin = round(cash * 0.028, 2))
+  
   mergedOMSData_rate %<>%
     mutate(carrying_fee_flag = ifelse(carrying_fee_laz >= carrying_fee, "OKAY", "NOT_OKAY")) %>%
-    mutate(cod_fee_flag = ifelse(cod_fee_laz >= cod_fee, "OKAY", "NOT_OKAY"))
+    mutate(cod_fee_flag = ifelse(cod_fee - cod_fee_laz > 0.05 , "NOT_OKAY", "OKAY")) %>%
+    mutate(cod_fee_fin = ifelse(cod_fee_fin - cod_fee_laz > 0.05, "NOT_OKAY", "OKAY" ))
+  
   mergedOMSData_rate %<>%
-    mutate(status_flag = ifelse(delivery_status == "Delivery" & !is.na(cancelled), "Delivery_Cancelled", 
+    mutate(status_flag = ifelse(delivery_status == "Delivery" & !is.na(cancelled) & (shipped >= cancelled | is.na(shipped)), "Delivery_Cancelled", 
                                 ifelse(delivery_status == "Return" & !is.na(delivered), "Return_Delivered", "OKAY")))
   
   paidInvoiceData <- LoadInvoiceData("01_Input/Kerry/03_Paid_Invoice")
@@ -71,13 +85,13 @@ tryCatch({
                                            paidInvoiceList[tracking_number,]$InvoiceFile,"")))
   
   mergedOMSData_final <- mergedOMSData_rate %>%
-    select(-c(id_sales_order_item, bob_id_sales_order_item, fk_sales_order, fk_sales_order_item_status, fk_marketplace_merchant,
-              product_name, fk_package, id_package_dispatching, fk_shipment_provider, id_seller,
-              paidPrice, shippingFee, shippingSurcharge, skus_names, missingActualWeight, missingVolumetricDimension,
+    select(-c(id_sales_order_item, bob_id_sales_order_item, fk_sales_order, fk_sales_order_item_status, 
+              product_name, id_seller, paidPrice, shippingFee, shippingSurcharge, skus_names, missingActualWeight, missingVolumetricDimension,
               level_7_code, level_7_customer_address_region_type, level_7_fk_customer_address_region,
               level_6_code, level_6_customer_address_region_type, level_6_fk_customer_address_region,
               level_5_code, level_5_customer_address_region_type, level_5_fk_customer_address_region))
-  
+#   source("02_Codes/01_Load/Load_Invoice_Data.R")
+#   CODData <- LoadInvoiceData("01_Input/Kerry/02_COD")
   
   flog.info("Writing Result to csv format!!!", name = reportName)
   # source("02_Codes/04_Reports/SummaryReport.R")

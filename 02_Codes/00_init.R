@@ -2,9 +2,9 @@ dateReport <- format(Sys.time(), "%Y%m%d")
 timeReport <- format(Sys.time(), "%Y%m%d%H%M")
 suppressMessages({
   options( java.parameters = "-Xmx8g" ) # Set heap memory for Java upto 4GB
-  if (!("readr" %in% rownames(installed.packages()))) {
-    install.packages("readr", repos = "http://cran.rstudio.com", quiet = TRUE)
-  }
+#   if (!("readr" %in% rownames(installed.packages()))) {
+#     install.packages("readr", repos = "http://cran.rstudio.com", quiet = TRUE)
+#   }
   library(readr)
   library(dplyr)
   library(tidyr)
