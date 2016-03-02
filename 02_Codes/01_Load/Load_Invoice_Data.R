@@ -14,6 +14,9 @@ LoadInvoiceData <- function(invoicePath) {
   
   output <- tryCatch({
     
+    setClass("myDate")
+    setAs("character","myDate", function(from) as.POSIXct(substr(gsub('"','',from), 1, 10),
+                                                          format="%Y-%m-%d"))
     setClass("myNumeric")
     setAs("character","myNumeric", function(from) as.numeric(gsub('[^0-9\\.]','',from)))
     
@@ -44,18 +47,18 @@ LoadInvoiceData <- function(invoicePath) {
 #                                                              XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING))
 #         names(invoiceFileData) <- colNames
 #       } else {
-        invoiceFileData <- read_csv(file.path(invoicePath, ifile), skip = 1,
-                                    col_names = colNames,
-                                    col_types = cols(col_character(), col_character(), col_character(),
-                                                  col_character(), col_character(), col_character(),
-                                                  col_character(), col_character(), col_character(), col_character(),
-                                                  col_double(), col_double(), col_double(),
-                                                  col_double(), col_double(), col_double(),
-                                                  col_double(), col_double(), col_double(),
-                                                  col_double(), col_double(), col_double(),
-                                                  col_double(), col_double(), col_character(),
-                                                  col_character(), col_character(), col_character()))
-      # }
+        invoiceFileData <- read.csv(file.path(invoicePath, ifile), quote = '"', sep=",", row.names = NULL,
+                                    col.names = colNames,
+                                    colClasses = c("character", "character", "myDate",
+                                                   "myDate", "character", "character",
+                                                   "character", "character","character", "character",
+                                                   "myNumeric", "myNumeric", "myNumeric",
+                                                   "myNumeric", "myNumeric", "myNumeric",
+                                                   "myNumeric", "myNumeric", "myNumeric",
+                                                   "myNumeric", "myNumeric", "myNumeric",
+                                                   "myNumeric", "myNumeric", "character",
+                                                   "character", "character","character"))
+        # }
       
       invoiceFileData %<>%
         mutate(package_chargeable_weight = package_weight) %>%
