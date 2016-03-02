@@ -15,7 +15,7 @@ suppressMessages({
     write.csv(checkedInvoiceData, outputFile, row.names = FALSE)
     
     for (iWarn in warnings()){
-      logwarn(paste(functionName, iWarn), logger = reportName)
+      flog.warn(paste(functionName, iWarn), logger = reportName)
     }
     
   }, error = function(err) {

@@ -12,18 +12,20 @@ MapRateCard <- function(mergedOMSData, rateCardFilePath, postalCodePath) {
   flog.info(paste("Function", functionName, "started"), name = reportName)
   
   output <- tryCatch({
+    setClass("myNumeric")
+    setAs("character","myNumeric", function(from) as.numeric(gsub('[^0-9\\.]','',from)))
     
 #     wb <- loadWorkbook(rateCardFilePath)  
 #     rateCard <- readWorksheet(object = wb, sheet = 1, colTypes = c(XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.NUMERIC, XLC$DATA_TYPE.NUMERIC,
                                                                    # XLC$DATA_TYPE.NUMERIC))
-    rateCard <- read_csv(rateCardFilePath, skip = 1, 
-                         col_names = c("Zone", "Min", "Max", "Rates" ), 
-                         col_types = cols(col_character(), col_double(), col_double(),col_double()))
+    rateCard <- read.csv(rateCardFilePath, quote = '"', sep=",", row.names = NULL,
+                         col.names = c("Zone", "Min", "Max", "Rates" ), 
+                         colClasses = c("character","myNumeric", "myNumeric", "myNumeric"))
 #     wb <- loadWorkbook(postalCodePath)
     # postalCode <- readWorksheet(object = wb, sheet = 1, colTypes = c(XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING))
-    postalCode <- read_csv(postalCodePath, skip = 1, 
-                           col_names = c("postal_code","area"), 
-                           col_types = cols(col_character(), col_character()))
+    postalCode <- read.csv(postalCodePath, quote = '"', sep=",", row.names = NULL,
+                           col.names = c("postal_code","area"), 
+                           colClasses = c("character", "character"))
 #     postalCode %<>%
 #       mutate(area_revised = ifelse(area == "Greater Bangkok", "Zone_A",
 #                                    ifelse(area == "Remote Area", "Remote_area", "Zone_B")))
@@ -34,19 +36,23 @@ MapRateCard <- function(mergedOMSData, rateCardFilePath, postalCodePath) {
     mergedOMSData_rev %<>% mutate(origin_area = area) %>%
       select(-c(area))
     
+    mergedOMSData_rev %<>% 
+      mutate(is_OMSPostcode = ifelse(is.na(postcode), 0, 1)) %>%
+      mutate(postcode = ifelse(is.na(postcode), destination_branch, postcode))
+    
     mergedOMSData_rev <- left_join(mergedOMSData_rev, 
                                    postalCode ,
                                    by = c("postcode" = "postal_code"))
-    mergedOMSData_rev %<>% mutate(dest_area = area) %>%
+    mergedOMSData_rev %<>% mutate(dest_area =  area) %>%
       select(-c(area))
     
     mergedOMSData_rev %<>% mutate(area_revised = ifelse(origin_area == "Greater Bangkok" & dest_area == "Greater Bangkok", "Greater Bangkok", 
                                                         ifelse(origin_area == "Remote area" | dest_area == "Remote area", "Remote area", 
                                                                ifelse(origin_area == "Upcountry" | dest_area == "Upcountry", "Upcountry", NA))))
     
-    mergedOMSData_rev %<>%
-      # mutate(area_revised = ifelse(is.na(area_revised), "Zone_B", area_revised)) %>%
-      mutate(area_revised = ifelse(existence_flag == "NOT_OKAY", NA, area_revised))
+#     mergedOMSData_rev %<>%
+#       # mutate(area_revised = ifelse(is.na(area_revised), "Zone_B", area_revised)) %>%
+#       mutate(area_revised = ifelse(existence_flag == "NOT_OKAY", NA, area_revised))
     
     mergedOMSData_rev %<>%
       mutate(Min = ifelse(calculatedWeight <= 1, 0.1,

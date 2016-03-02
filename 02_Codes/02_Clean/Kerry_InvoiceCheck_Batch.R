@@ -53,8 +53,11 @@ tryCatch({
   
   codFinData %<>% 
     mutate(tracking_number = ifelse(substr(tracking_number, 1, 1) == "1", tracking_number_ref, tracking_number)) %>%
-    mutate(tracking_number = toupper(tracking_number))
-  mergedOMSData_rate <- left_join(mergedOMSData_rate, codFinData[, c(1,5)], by = c("tracking_number" = "tracking_number"))
+    mutate(tracking_number = toupper(tracking_number)) %>%
+    group_by(tracking_number) %>%
+    summarise(cash = sum(cash))
+  
+  mergedOMSData_rate <- left_join(mergedOMSData_rate, codFinData, by = c("tracking_number" = "tracking_number"))
   
   mergedOMSData_rate %<>%
     mutate(carrying_fee_laz = ifelse(Max == 99, (ceiling(calculatedWeight) - 20) * 10 + Rates, Rates)) %>%
@@ -64,8 +67,8 @@ tryCatch({
   
   mergedOMSData_rate %<>%
     mutate(carrying_fee_flag = ifelse(carrying_fee_laz >= carrying_fee, "OKAY", "NOT_OKAY")) %>%
-    mutate(cod_fee_flag = ifelse(cod_fee - cod_fee_laz > 0.05 , "NOT_OKAY", "OKAY")) %>%
-    mutate(cod_fee_fin_flag = ifelse(abs(cod_fee - cod_fee_fin) > 0.05, "NOT_OKAY", "OKAY" ))
+    mutate(cod_fee_flag = ifelse(cod_fee - cod_fee_laz > codThreshold , "NOT_OKAY", "OKAY")) %>%
+    mutate(cod_fee_fin_flag = ifelse(abs(cod_fee - cod_fee_fin) > codThreshold, "NOT_OKAY", "OKAY" ))
   
   mergedOMSData_rate %<>%
     mutate(status_flag = ifelse(delivery_status == "Delivery" & !is.na(cancelled) & (shipped >= cancelled | is.na(shipped)), "Delivery_Cancelled", 
@@ -93,13 +96,11 @@ tryCatch({
                                            paidInvoiceList[tracking_number,]$InvoiceFile,"")))
   
   mergedOMSData_final <- mergedOMSData_rate %>%
-    select(-c(id_sales_order_item, bob_id_sales_order_item, fk_sales_order, fk_sales_order_item_status, rawFile, amount_paid, package_weight.y, 
-              product_name, id_seller, paidPrice, shippingFee, shippingSurcharge, skus_names, missingActualWeight, missingVolumetricDimension,
-              shipping_fee,shipping_discount_amount,shipping_surcharge,
-              ward,city,fk_customer_address_region,level_7_name,level_6_name,level_5_name,
-              level_7_code, level_7_customer_address_region_type, level_7_fk_customer_address_region,
-              level_6_code, level_6_customer_address_region_type, level_6_fk_customer_address_region,
-              level_5_code, level_5_customer_address_region_type, level_5_fk_customer_address_region))
+    select(line_id,X3pl_name, package_pickup_date,package_pod_date,invoice_number,tracking_number,tracking_number_rts,order_number,package_volume,package_height,package_width,package_length,package_weight.x,package_chargeable_weight,carrying_fee,redelivery_fee,rejection_fee,cod_fee,special_area_fee,special_handling_fee,insurance_fee,vat,origin_branch,destination_branch,delivery_zone_zip_code,rate_type,delivery_status,
+           order_nr, unit_price,paid_price,itemsCount,sku,skus,volumetricDimension,actualWeight,payment_method,package_number,shipped,cancelled,delivered,being_returned,rts,Seller_Code,Seller,tax_class,shipment_provider_name,postcode,seller_postcode,origineName,
+           medWeight,is_medWeight,calculatedWeight,origin_area,dest_area,is_OMSPostcode, area_revised,Min,Max,Rates,cash,carrying_fee_laz,cod_fee_laz,cod_fee_fin,existence_flag,RateCardMappedFlag,carrying_fee_flag,cod_fee_flag,cod_fee_fin_flag,status_flag,Duplication_Flag,DuplicationSource
+    )
+
 #   source("02_Codes/01_Load/Load_Invoice_Data.R")
 #   CODData <- LoadInvoiceData("01_Input/Kerry/02_COD")
   
