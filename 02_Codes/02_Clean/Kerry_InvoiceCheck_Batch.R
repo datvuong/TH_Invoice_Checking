@@ -18,15 +18,22 @@ tryCatch({
     mutate(package_number = ifelse(is.na(package_number.y), package_number.x,
                                    package_number.y)) %>%
     select(-c(package_number.x, package_number.y))
-  skusActualWeight <- read_csv(paste0("01_Input/", "skus_actual_weight_201512.csv"), skip = 1,  
-                               col_names = c("sku","sum_of_TN","minWeight","maxWeight","medWeight","meanWeight"), 
-                               col_types = cols(col_character(), col_double(), col_double(), col_double(),col_double(), col_double()))
+  
+  setClass("myNumeric")
+  setAs("character","myNumeric", function(from) as.numeric(gsub('[^0-9\\.]','',from)))
+  
+  skusActualWeight <- read.csv(paste0("01_Input/", "skus_actual_weight_201512.csv"), quote = '"', sep=",", row.names = NULL,
+                              col.names = c("sku","sum_of_TN","minWeight","maxWeight","medWeight","meanWeight"), 
+                              colClasses = c("character", "myNumeric", "myNumeric", "myNumeric", "myNumeric", "myNumeric"))
+  source("02_Codes/01_Load/loadCommonVariables.R")
+  loadCommonVariables(paste0("01_Input/Kerry/", "commonVariables.csv"))
+  
   mergedOMSData %<>% mutate(sku = substr(sku, 1, 16))
   mergedOMSData <- left_join(mergedOMSData, skusActualWeight %>% select(sku, medWeight), by = c("sku" = "sku"))
   mergedOMSData %<>% mutate(is_medWeight = ifelse(itemsCount == 1 & !is.na(medWeight), 1, 0)) %>%
-    mutate(calculatedWeight = ifelse(itemsCount == 1 & !is.na(medWeight) & ((package_chargeable_weight <= 5 & (package_chargeable_weight - medWeight) > 0.2 * package_chargeable_weight) |
-                                                                            (package_chargeable_weight <= 20 & (package_chargeable_weight - medWeight) > 0.1 * package_chargeable_weight) | 
-                                                                            (package_chargeable_weight > 20 & (package_chargeable_weight - medWeight) > 2)), medWeight, package_chargeable_weight))
+    mutate(calculatedWeight = ifelse(itemsCount == 1 & !is.na(medWeight) & ((package_chargeable_weight <= weightFirstUpperBound & (package_chargeable_weight - medWeight) > weightFirstThreshold * package_chargeable_weight) |
+                                                                            (package_chargeable_weight <= weightSecondUpperBound & (package_chargeable_weight - medWeight) > weightSecondThreshold * package_chargeable_weight) | 
+                                                                            (package_chargeable_weight > weightSecondUpperBound & (package_chargeable_weight - medWeight) > weightThirdThreshold)), medWeight, package_chargeable_weight))
   # Existence Flag
   mergedOMSData %<>%
     mutate(existence_flag = ifelse(!is.na(rts), "OKAY", "NOT_OKAY"))
@@ -38,11 +45,12 @@ tryCatch({
                                     postalCodePath =  "01_Input/Kerry/04_Postalcode/Kerry_postalcode.csv")
   
   # Rate Calculation 
-  codFinData <- read_csv(paste0("01_Input/Kerry/02_COD/", "COD_FinData_201511.csv"), skip = 1,
-                         col_names = c("tracking_number", "tracking_number_ref", "pickupDate", "destination", 
+  codFinData <- read.csv(paste0("01_Input/Kerry/02_COD/", "COD_FinData_201511.csv"), quote = '"', sep=",", row.names = NULL,
+                         col.names = c("tracking_number", "tracking_number_ref", "pickupDate", "destination", 
                                        "cash", "cod_surcharge", "bach_date", "type", "quarter"),
-                         col_types = cols(col_character(), col_character(), col_character(), col_character(),
-                                          col_double(), col_double(), col_character(), col_character(), col_character()))
+                         colClasses = c("character", "character", "character", "character",
+                                        "myNumeric", "myNumeric", "character", "character", "character"))
+  
   codFinData %<>% 
     mutate(tracking_number = ifelse(substr(tracking_number, 1, 1) == "1", tracking_number_ref, tracking_number)) %>%
     mutate(tracking_number = toupper(tracking_number))
@@ -57,7 +65,7 @@ tryCatch({
   mergedOMSData_rate %<>%
     mutate(carrying_fee_flag = ifelse(carrying_fee_laz >= carrying_fee, "OKAY", "NOT_OKAY")) %>%
     mutate(cod_fee_flag = ifelse(cod_fee - cod_fee_laz > 0.05 , "NOT_OKAY", "OKAY")) %>%
-    mutate(cod_fee_fin_flag = ifelse(cod_fee_fin - cod_fee_laz > 0.05, "NOT_OKAY", "OKAY" ))
+    mutate(cod_fee_fin_flag = ifelse(abs(cod_fee - cod_fee_fin) > 0.05, "NOT_OKAY", "OKAY" ))
   
   mergedOMSData_rate %<>%
     mutate(status_flag = ifelse(delivery_status == "Delivery" & !is.na(cancelled) & (shipped >= cancelled | is.na(shipped)), "Delivery_Cancelled", 
@@ -85,7 +93,7 @@ tryCatch({
                                            paidInvoiceList[tracking_number,]$InvoiceFile,"")))
   
   mergedOMSData_final <- mergedOMSData_rate %>%
-    select(-c(id_sales_order_item, bob_id_sales_order_item, fk_sales_order, fk_sales_order_item_status, 
+    select(-c(id_sales_order_item, bob_id_sales_order_item, fk_sales_order, fk_sales_order_item_status, rawFile, amount_paid, package_weight.y, 
               product_name, id_seller, paidPrice, shippingFee, shippingSurcharge, skus_names, missingActualWeight, missingVolumetricDimension,
               shipping_fee,shipping_discount_amount,shipping_surcharge,
               ward,city,fk_customer_address_region,level_7_name,level_6_name,level_5_name,

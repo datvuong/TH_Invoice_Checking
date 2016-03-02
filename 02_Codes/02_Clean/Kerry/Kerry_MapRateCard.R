@@ -49,12 +49,12 @@ MapRateCard <- function(mergedOMSData, rateCardFilePath, postalCodePath) {
       mutate(area_revised = ifelse(existence_flag == "NOT_OKAY", NA, area_revised))
     
     mergedOMSData_rev %<>%
-      mutate(Min = ifelse(calculatedWeight <= 1, 0.01,
-                          ifelse(calculatedWeight <= 3, 1.01,
-                                 ifelse(calculatedWeight <= 5, 3.01,
-                                        ifelse(calculatedWeight <= 10, 5.01,
-                                               ifelse(calculatedWeight <= 15, 10.01, 
-                                                      ifelse(calculatedWeight <= 20, 15.01, 20.01))))))) %>%
+      mutate(Min = ifelse(calculatedWeight <= 1, 0.1,
+                          ifelse(calculatedWeight <= 3, 1.1,
+                                 ifelse(calculatedWeight <= 5, 3.1,
+                                        ifelse(calculatedWeight <= 10, 5.1,
+                                               ifelse(calculatedWeight <= 15, 10.1, 
+                                                      ifelse(calculatedWeight <= 20, 15.1, 20.1))))))) %>%
       mutate(Max = ifelse(calculatedWeight <= 1, 1,
                           ifelse(calculatedWeight <= 3, 3,
                                  ifelse(calculatedWeight <= 5, 5,
