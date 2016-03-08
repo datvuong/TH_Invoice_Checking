@@ -97,7 +97,7 @@ tryCatch({
   
   mergedOMSData_final <- mergedOMSData_rate %>%
     select(line_id,X3pl_name, package_pickup_date,package_pod_date,invoice_number,tracking_number,tracking_number_rts,order_number,package_volume,package_height,package_width,package_length,package_weight.x,package_chargeable_weight,carrying_fee,redelivery_fee,rejection_fee,cod_fee,special_area_fee,special_handling_fee,insurance_fee,vat,origin_branch,destination_branch,delivery_zone_zip_code,rate_type,delivery_status,number_packages,
-           order_nr, unit_price,paid_price,itemsCount,sku,skus,volumetricDimension,actualWeight,payment_method,package_number,shipped,cancelled,delivered,being_returned,rts,Seller_Code,Seller,tax_class,shipment_provider_name,postcode,seller_postcode,origineName,
+           order_nr, unit_price,paid_price,itemsCount,paidPrice,shippingFee,shippingSurcharge,sku,skus,volumetricDimension,actualWeight,payment_method,package_number,shipped,cancelled,delivered,being_returned,rts,Seller_Code,Seller,tax_class,shipment_provider_name,postcode,seller_postcode,origineName,
            medWeight,is_medWeight,calculatedWeight,dest_area,is_OMSPostcode,Min,Max,Rates,cash,carrying_fee_laz,cod_fee_laz,cod_fee_fin,existence_flag,RateCardMappedFlag,carrying_fee_flag,cod_fee_flag,cod_fee_fin_flag,status_flag,Duplication_Flag,DuplicationSource
     )
 
