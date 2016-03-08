@@ -26,29 +26,27 @@ MapRateCard <- function(mergedOMSData, rateCardFilePath, postalCodePath) {
     postalCode <- read.csv(postalCodePath, quote = '"', sep=",", row.names = NULL,
                            col.names = c("postal_code","area"), 
                            colClasses = c("character", "character"))
-    mergedOMSData %<>%
-      mutate(origin_branch = gsub(".$", "0", gsub('[^0-9]', '', origin_branch)))
     
-    mergedOMSData_rev <- left_join(mergedOMSData, 
-                                   postalCode ,
-                                   by = c("origin_branch" = "postal_code"))
-    mergedOMSData_rev %<>% mutate(origin_area = area) %>%
-      select(-c(area))
+#     mergedOMSData_rev <- left_join(mergedOMSData, 
+#                                    postalCode ,
+#                                    by = c("origin_branch" = "postal_code"))
+#     mergedOMSData_rev %<>% mutate(origin_area = area) %>%
+#       select(-c(area))
     
-    mergedOMSData_rev %<>% 
+    mergedOMSData %<>% 
       mutate(is_OMSPostcode = ifelse(is.na(postcode), 0, 1)) %>%
       mutate(postcode = ifelse(is.na(postcode), destination_branch, postcode)) %>%
-      mutate(postcode = gsub(".$", "0", gsub('[^0-9]', '', postcode)))
+      mutate(postcode = gsub(".$", "0", gsub('[^0-9]', '', postcode))) 
     
-    mergedOMSData_rev <- left_join(mergedOMSData_rev, 
+    mergedOMSData_rev <- left_join(mergedOMSData, 
                                    postalCode ,
                                    by = c("postcode" = "postal_code"))
     mergedOMSData_rev %<>% mutate(dest_area =  area) %>%
       select(-c(area))
-    
-    mergedOMSData_rev %<>% mutate(area_revised = ifelse(origin_area == "Greater Bangkok" & dest_area == "Greater Bangkok", "Greater Bangkok", 
-                                                        ifelse(origin_area == "Remote area" | dest_area == "Remote area", "Remote area", 
-                                                               ifelse(origin_area == "Upcountry" | dest_area == "Upcountry", "Upcountry", NA))))
+#     
+#     mergedOMSData_rev %<>% mutate(area_revised = ifelse(origin_area == "Greater Bangkok" & dest_area == "Greater Bangkok", "Greater Bangkok", 
+#                                                         ifelse(origin_area == "Remote area" | dest_area == "Remote area", "Remote area", 
+#                                                                ifelse(origin_area == "Upcountry" | dest_area == "Upcountry", "Upcountry", NA))))
     
 #     mergedOMSData_rev %<>%
 #       # mutate(area_revised = ifelse(is.na(area_revised), "Zone_B", area_revised)) %>%
@@ -69,7 +67,7 @@ MapRateCard <- function(mergedOMSData, rateCardFilePath, postalCodePath) {
                                                       ifelse(calculatedWeight <= 20, 20, 99)))))))
     
     mergedOMSData_rev <- left_join(mergedOMSData_rev, rateCard,
-                                   by = c("area_revised" = "Zone",
+                                   by = c("dest_area" = "Zone",
                                           "Min", "Max"))
     
     mergedOMSData_rev %<>%

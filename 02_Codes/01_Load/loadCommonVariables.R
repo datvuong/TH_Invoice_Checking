@@ -23,6 +23,8 @@ suppressMessages({
     weightFirstUpperBound <<- commonVarialbes$upper_bound[2]
     weightSecondUpperBound <<- commonVarialbes$upper_bound[3]
     weightThirdUpperBound <<- commonVarialbes$upper_bound[4]
+    CODRate <<- commonVarialbes$value[5]
+    carryingFeeAdding <<- commonVarialbes$value[6]
     
     for (iWarn in warnings()){
       flog.warn(paste(functionName, iWarn), name = reportName)

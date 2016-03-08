@@ -25,39 +25,41 @@ LoadInvoiceData <- function(invoicePath) {
     invoiceData <- NULL
     colNames <- c("line_id", "3pl_name", "package_pickup_date",
                   "package_pod_date", "invoice_number", "package_number",
-                  "tracking_number", "tracking_number_rts", "order_number", "delivery_status", 
+                  "tracking_number", "tracking_number_rts", "order_number", 
                   "package_volume", "package_height", "package_width",
                   "package_length", "package_weight", "package_chargeable_weight",
                   "carrying_fee", "redelivery_fee", "rejection_fee",
                   "cod_fee", "special_area_fee", "special_handling_fee",
                   "insurance_fee", "vat", "origin_branch",
-                  "destination_branch", "delivery_zone_zip_code", "rate_type")
+                  "destination_branch", "delivery_zone_zip_code", "rate_type", 
+                  "delivery_status", "number_packages")
     fullData <- NULL
     for (ifile in excelFiles) {
 #       if (file_ext(ifile) %in% c("xls", "xlsx")) {
 #         wb <- loadWorkbook(file.path(invoicePath, ifile))
 #         invoiceFileData <- readWorksheet(wb, 1, colTypes = c(XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING,
 #                                                              XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING,
-#                                                              XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING,
+#                                                              XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING,
 #                                                              XLC$DATA_TYPE.NUMERIC, XLC$DATA_TYPE.NUMERIC, XLC$DATA_TYPE.NUMERIC,
 #                                                              XLC$DATA_TYPE.NUMERIC, XLC$DATA_TYPE.NUMERIC, XLC$DATA_TYPE.NUMERIC,
 #                                                              XLC$DATA_TYPE.NUMERIC, XLC$DATA_TYPE.NUMERIC, XLC$DATA_TYPE.NUMERIC,
 #                                                              XLC$DATA_TYPE.NUMERIC, XLC$DATA_TYPE.NUMERIC, XLC$DATA_TYPE.NUMERIC,
 #                                                              XLC$DATA_TYPE.NUMERIC, XLC$DATA_TYPE.NUMERIC, XLC$DATA_TYPE.STRING,
-#                                                              XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING))
+#                                                              XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING,  XLC$DATA_TYPE.STRING))
 #         names(invoiceFileData) <- colNames
 #       } else {
         invoiceFileData <- read.csv(file.path(invoicePath, ifile), quote = '"', sep=",", row.names = NULL,
                                     col.names = colNames,
                                     colClasses = c("character", "character", "myDate",
                                                    "myDate", "character", "character",
-                                                   "character", "character","character", "character",
+                                                   "character", "character","character", 
                                                    "myNumeric", "myNumeric", "myNumeric",
                                                    "myNumeric", "myNumeric", "myNumeric",
                                                    "myNumeric", "myNumeric", "myNumeric",
                                                    "myNumeric", "myNumeric", "myNumeric",
                                                    "myNumeric", "myNumeric", "character",
-                                                   "character", "character","character"))
+                                                   "character", "character","character",
+                                                   "character", "myNumeric"))
         # }
       
       invoiceFileData %<>%
