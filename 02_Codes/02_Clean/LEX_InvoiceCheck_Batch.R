@@ -7,7 +7,7 @@ tryCatch({
   source("02_Codes/01_Load/Load_Invoice_Data.R")
   
   load("01_Input/RData/packageDataBased.RData")
-  invoiceData <- LoadInvoiceData("01_Input/Kerry/01_Invoice")
+  invoiceData <- LoadInvoiceData("01_Input/LEX/01_Invoice")
   
   mergedOMSData <- left_join(invoiceData,
                              packageDataBased,
@@ -26,7 +26,7 @@ tryCatch({
                               col.names = c("sku","sum_of_TN","minWeight","maxWeight","medWeight","meanWeight"), 
                               colClasses = c("character", "myNumeric", "myNumeric", "myNumeric", "myNumeric", "myNumeric"))
   source("02_Codes/01_Load/loadCommonVariables.R")
-  loadCommonVariables(paste0("01_Input/Kerry/", "commonVariables.csv"))
+  loadCommonVariables(paste0("01_Input/LEX/", "commonVariables.csv"))
   
   mergedOMSData %<>% mutate(sku = substr(sku, 1, 16))
   mergedOMSData <- left_join(mergedOMSData, skusActualWeight %>% select(sku, medWeight), by = c("sku" = "sku"))
@@ -39,13 +39,13 @@ tryCatch({
     mutate(existence_flag = ifelse(!is.na(rts), "OKAY", "NOT_OKAY"))
   
   # Map Rate Card
-  source("02_Codes/02_Clean/Kerry/Kerry_MapRateCard.R")
+  source("02_Codes/02_Clean/LEX/LEX_MapRateCard.R")
   mergedOMSData_rate <- MapRateCard(mergedOMSData, 
-                                    rateCardFilePath =  "01_Input/Kerry/05_Ratecards/Kerry_rates.csv",
-                                    postalCodePath =  "01_Input/Kerry/04_Postalcode/Kerry_postalcode.csv")
+                                    rateCardFilePath =  "01_Input/LEX/05_Ratecards/LEX_rates.csv",
+                                    postalCodePath =  "01_Input/LEX/04_Postalcode/LEX_postalcode.csv")
   
   # Rate Calculation 
-  codFinData <- read.csv(paste0("01_Input/Kerry/02_COD/", "COD_FinData_201511.csv"), quote = '"', sep=",", row.names = NULL,
+  codFinData <- read.csv(paste0("01_Input/LEX/02_COD/", "COD_FinData_201511.csv"), quote = '"', sep=",", row.names = NULL,
                          col.names = c("tracking_number", "tracking_number_ref", "pickupDate", "destination", 
                                        "cash", "cod_surcharge", "bach_date", "type", "quarter"),
                          colClasses = c("character", "character", "character", "character",
@@ -74,7 +74,7 @@ tryCatch({
     mutate(status_flag = ifelse(delivery_status == "Delivery" & !is.na(cancelled) & (shipped >= cancelled | is.na(shipped)), "Delivery_Cancelled", 
                                 ifelse(delivery_status == "Return" & !is.na(delivered), "Return_Delivered", "OKAY")))
   
-  paidInvoiceData <- LoadInvoiceData("01_Input/Kerry/03_Paid_Invoice")
+  paidInvoiceData <- LoadInvoiceData("01_Input/LEX/03_Paid_Invoice")
   
   paidInvoice <- NULL
   paidInvoiceList <- NULL
@@ -98,11 +98,11 @@ tryCatch({
   mergedOMSData_final <- mergedOMSData_rate %>%
     select(line_id,X3pl_name, package_pickup_date,package_pod_date,invoice_number,tracking_number,tracking_number_rts,order_number,package_volume,package_height,package_width,package_length,package_weight.x,package_chargeable_weight,carrying_fee,redelivery_fee,rejection_fee,cod_fee,special_area_fee,special_handling_fee,insurance_fee,vat,origin_branch,destination_branch,delivery_zone_zip_code,rate_type,delivery_status,number_packages,
            order_nr, unit_price,paid_price,itemsCount,sku,skus,volumetricDimension,actualWeight,payment_method,package_number,shipped,cancelled,delivered,being_returned,rts,Seller_Code,Seller,tax_class,shipment_provider_name,postcode,seller_postcode,origineName,
-           medWeight,is_medWeight,calculatedWeight,origin_area,dest_area,is_OMSPostcode, area_revised,Min,Max,Rates,cash,carrying_fee_laz,cod_fee_laz,cod_fee_fin,existence_flag,RateCardMappedFlag,carrying_fee_flag,cod_fee_flag,cod_fee_fin_flag,status_flag,Duplication_Flag,DuplicationSource
+           medWeight,is_medWeight,calculatedWeight,dest_area,is_OMSPostcode,Min,Max,Rates,cash,carrying_fee_laz,cod_fee_laz,cod_fee_fin,existence_flag,RateCardMappedFlag,carrying_fee_flag,cod_fee_flag,cod_fee_fin_flag,status_flag,Duplication_Flag,DuplicationSource
     )
 
 #   source("02_Codes/01_Load/Load_Invoice_Data.R")
-#   CODData <- LoadInvoiceData("01_Input/Kerry/02_COD")
+#   CODData <- LoadInvoiceData("01_Input/LEX/02_COD")
   
   flog.info("Writing Result to csv format!!!", name = reportName)
   # source("02_Codes/04_Reports/SummaryReport.R")
@@ -117,17 +117,17 @@ tryCatch({
 #     filter(manualCheck == "NOT_FOUND") %>%
 #     select(deliveryCompany, trackingNumber, Seller_Code)
   
-  OutputRawData(mergedOMSData_final, paste0("05_Output/Kerry/checkedInvoice_",dateReport,".csv"))
+  OutputRawData(mergedOMSData_final, paste0("05_Output/LEX/checkedInvoice_",dateReport,".csv"))
 #   OutputRawData(exceedThresholdTrackingNumber, paste0("2_Output/gdex/exceedThresholdTrackingNumber_",dateReport,".csv"))
 #   OutputRawData(notFoundTrackingNumber, paste0("2_Output/gdex/notFoundTrackingNumber_",dateReport,".csv"))
-  # SummaryReport(mergedOMSData_final, paste0("05_Output/Kerry/summaryReport_",dateReport,".csv"))
+  # SummaryReport(mergedOMSData_final, paste0("05_Output/LEX/summaryReport_",dateReport,".csv"))
   
   
 #   invoiceFiles <- unique(mergedOMSData_final$rawFile)
 #   for (iFile in invoiceFiles) {
 #     fileName <- gsub(".xls.*$", "_checked.csv", iFile)
 #     fileData <-  as.data.frame(mergedOMSData_final %>% filter(rawFile == iFile))
-#     write.csv(fileData, file.path("05_Output/Kerry", fileName),
+#     write.csv(fileData, file.path("05_Output/LEX", fileName),
 #                row.names = FALSE)
 #   }
   

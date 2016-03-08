@@ -15,10 +15,10 @@ suppressMessages({
   library(XLConnect)
 })
 
-reportName <- paste0("IDInvoiceCheck")
-warningLog <- paste0("IDInvoiceCheck", "warning")
+reportName <- paste0("THInvoiceCheck")
+warningLog <- paste0("THInvoiceCheck", "warning")
 flog.appender(appender.tee(file.path("06_Log",
-                                      paste0("ID_InvoiceChecking",dateReport,".csv"))),
+                                      paste0("TH_InvoiceChecking",dateReport,".csv"))),
               name = reportName)
 
 layout <- layout.format(paste0(timeReport,'|[~l]|[~t]|[~n.~f]|~m'))
