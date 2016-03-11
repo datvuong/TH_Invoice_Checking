@@ -64,13 +64,13 @@ tryCatch({
     mutate(cod_fee_laz = round(ifelse(payment_method == "CashOnDelivery",
                                       (paidPrice + shippingFee + shippingSurcharge) * CODRate, 0), 2)) %>%
     mutate(cod_fee_fin = round(cash * CODRate, 2)) %>%
-    mutate(insurance_fee_laz = paidPrice * insuranceFeeRate)
+    mutate(insurance_fee_laz = round(paidPrice * insuranceFeeRate,2))
   
   mergedOMSData_rate %<>%
     mutate(carrying_fee_flag = ifelse(carrying_fee_laz >= carrying_fee, "OKAY", "NOT_OKAY")) %>%
-    mutate(cod_fee_flag = ifelse(cod_fee_laz - cod_fee >= CODThreshold , "OKAY", "NOT_OKAY")) %>%
-    mutate(cod_fee_fin_flag = ifelse(abs(cod_fee - cod_fee_fin) >= CODThreshold, "OKAY", "NOT_OKAY" )) %>%
-    mutate(insurance_fee_flag = ifelse(insurance_fee_laz - insurance_fee >= insuranceFeeThreshold , "OKAY", "NOT_OKAY" ))
+    mutate(cod_fee_flag = ifelse(cod_fee - cod_fee_laz <= CODThreshold , "OKAY", "NOT_OKAY")) %>%
+    mutate(cod_fee_fin_flag = ifelse(cod_fee - cod_fee_fin <= CODThreshold, "OKAY", "NOT_OKAY" )) %>%
+    mutate(insurance_fee_flag = ifelse(insurance_fee - insurance_fee_laz <= insuranceFeeThreshold , "OKAY", "NOT_OKAY" ))
   
   mergedOMSData_rate %<>%
     mutate(status_flag = ifelse(delivery_status == "Delivery" & !is.na(cancelled) & (shipped >= cancelled | is.na(shipped)), "Delivery_Cancelled", 
