@@ -68,9 +68,9 @@ tryCatch({
   
   mergedOMSData_rate %<>%
     mutate(carrying_fee_flag = ifelse(carrying_fee_laz >= carrying_fee, "OKAY", "NOT_OKAY")) %>%
-    mutate(cod_fee_flag = ifelse(cod_fee - cod_fee_laz <= CODThreshold , "OKAY", "NOT_OKAY")) %>%
-    mutate(cod_fee_fin_flag = ifelse(cod_fee - cod_fee_fin <= CODThreshold, "OKAY", "NOT_OKAY" )) %>%
-    mutate(insurance_fee_flag = ifelse(insurance_fee - insurance_fee_laz <= insuranceFeeThreshold , "OKAY", "NOT_OKAY" ))
+    mutate(cod_fee_flag = ifelse(round(cod_fee - cod_fee_laz,2) <= CODThreshold , "OKAY", "NOT_OKAY")) %>%
+    mutate(cod_fee_fin_flag = ifelse(round(cod_fee - cod_fee_fin,2) <= CODThreshold, "OKAY", "NOT_OKAY" )) %>%
+    mutate(insurance_fee_flag = ifelse(round(insurance_fee - insurance_fee_laz,2) <= insuranceFeeThreshold , "OKAY", "NOT_OKAY" ))
   
   mergedOMSData_rate %<>%
     mutate(status_flag = ifelse(delivery_status == "Delivery" & !is.na(cancelled) & (shipped >= cancelled | is.na(shipped)), "Delivery_Cancelled", 
