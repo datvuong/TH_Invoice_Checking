@@ -36,7 +36,7 @@ tryCatch({
                                                                             (package_chargeable_weight > weightSecondUpperBound & (package_chargeable_weight - medWeight) > weightThirdThreshold)), medWeight, package_chargeable_weight))
   # Existence Flag
   mergedOMSData %<>%
-    mutate(existence_flag = ifelse(!is.na(rts), "OKAY", "NOT_OKAY"))
+    mutate(existence_flag = ifelse(!is.na(order_nr), "OKAY", "NOT_OKAY"))
   
   # Map Rate Card
   source("02_Codes/02_Clean/LEX/LEX_MapRateCard.R")
