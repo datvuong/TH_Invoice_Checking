@@ -32,7 +32,7 @@ tryCatch({
   mergedOMSData <- left_join(mergedOMSData, skusActualWeight %>% select(sku, medWeight), by = c("sku" = "sku"))
   mergedOMSData %<>% mutate(is_medWeight = ifelse(itemsCount == 1 & !is.na(medWeight), 1, 0)) %>%
     mutate(calculatedWeight = ifelse(itemsCount == 1 & !is.na(medWeight) & ((package_chargeable_weight <= weightFirstUpperBound & (package_chargeable_weight - medWeight) > weightFirstThreshold * package_chargeable_weight) |
-                                                                            (package_chargeable_weight <= weightSecondUpperBound & (package_chargeable_weight - medWeight) > weightSecondThreshold * package_chargeable_weight) | 
+                                                                            (package_chargeable_weight > weightFirstUpperBound & package_chargeable_weight <= weightSecondUpperBound & (package_chargeable_weight - medWeight) > weightSecondThreshold * package_chargeable_weight) | 
                                                                             (package_chargeable_weight > weightSecondUpperBound & (package_chargeable_weight - medWeight) > weightThirdThreshold)), medWeight, package_chargeable_weight))
   # Existence Flag
   mergedOMSData %<>%
