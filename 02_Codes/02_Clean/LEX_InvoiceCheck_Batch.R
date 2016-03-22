@@ -45,7 +45,7 @@ tryCatch({
                                     postalCodePath =  "01_Input/LEX/04_Postalcode/LEX_postalcode.csv")
   
   # Rate Calculation 
-  codFinData <- read.csv(paste0("01_Input/LEX/02_COD/", "COD_FinData_201511.csv"), quote = '"', sep=",", row.names = NULL,
+  codFinData <- read.csv(paste0("01_Input/LEX/02_COD/", "COD_FinData.csv"), quote = '"', sep=",", row.names = NULL,
                          col.names = c("tracking_number", "tracking_number_ref", "pickupDate", "destination", 
                                        "cash", "cod_surcharge", "bach_date", "type", "quarter"),
                          colClasses = c("character", "character", "character", "character",
