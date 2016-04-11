@@ -61,6 +61,7 @@ tryCatch({
   mergedOMSData_rate[,c("paidPrice", "shippingFee", "shippingSurcharge")][is.na(mergedOMSData_rate[,c("paidPrice", "shippingFee", "shippingSurcharge")])] <- 0
   mergedOMSData_rate %<>%
     mutate(carrying_fee_laz = ifelse(Max == 99, (ceiling(calculatedWeight) - 20) * carryingFeeOver20 + Rates, Rates)) %>%
+    mutate(return_fee_laz = ifelse(delivery_status == "Return" & project_type == "drop off", carrying_fee_laz * returnRate, 0)) %>%
     mutate(cod_fee_laz = round(ifelse(payment_method == "CashOnDelivery" & (paidPrice + shippingFee + shippingSurcharge) <= CODRate1stBound, CODRate1st,
                                       ifelse(payment_method == "CashOnDelivery" & (paidPrice + shippingFee + shippingSurcharge) <= CODRate2ndBound, CODRate2nd,
                                              ifelse(payment_method == "CashOnDelivery" & (paidPrice + shippingFee + shippingSurcharge) <= CODRate3rdBound, CODRate3rd,
@@ -81,6 +82,7 @@ tryCatch({
   
   mergedOMSData_rate %<>%
     mutate(carrying_fee_flag = ifelse(carrying_fee_laz >= carrying_fee, "OKAY", "NOT_OKAY")) %>%
+    mutate(return_fee_flag = ifelse(return_fee_laz >= redelivery_fee, "OKAY", "NOT_OKAY")) %>%
     mutate(cod_fee_flag = ifelse(round(cod_fee - cod_fee_laz,2) <= CODThreshold , "OKAY", "NOT_OKAY")) %>%
     mutate(cod_fee_fin_flag = ifelse(round(cod_fee - cod_fee_fin,2) <= CODThreshold, "OKAY", "NOT_OKAY" )) %>%
     mutate(insurance_fee_flag = ifelse(round(insurance_fee - insurance_fee_laz,2) <= insuranceFeeThreshold , "OKAY", "NOT_OKAY" ))
@@ -111,9 +113,9 @@ tryCatch({
                                            paidInvoiceList[tracking_number,]$InvoiceFile,"")))
   
   mergedOMSData_final <- mergedOMSData_rate %>%
-    select(line_id,X3pl_name, package_pickup_date,package_pod_date,invoice_number,tracking_number,tracking_number_rts,order_number,package_volume,package_height,package_width,package_length,package_weight.x,package_chargeable_weight,carrying_fee,redelivery_fee,rejection_fee,cod_fee,special_area_fee,special_handling_fee,insurance_fee,vat,origin_branch,destination_branch,delivery_zone_zip_code,rate_type,delivery_status,number_packages,
+    select(line_id,X3pl_name, package_pickup_date,package_pod_date,invoice_number,tracking_number,tracking_number_rts,order_number,package_volume,package_height,package_width,package_length,package_weight.x,package_chargeable_weight,carrying_fee,redelivery_fee,rejection_fee,cod_fee,special_area_fee,special_handling_fee,insurance_fee,vat,origin_branch,destination_branch,delivery_zone_zip_code,rate_type,delivery_status,number_packages,project_type,
            order_nr, unit_price,itemsCount,paidPrice,shippingFee,shippingSurcharge,sku,skus,volumetricDimension,actualWeight,payment_method,package_number,shipped,cancelled,delivered,being_returned,rts,Seller_Code,Seller,tax_class,shipment_provider_name,postcode,seller_postcode,origineName,
-           medWeight,is_medWeight,calculatedWeight,dest_area,is_OMSPostcode,Min,Max,Rates,cash,carrying_fee_laz,cod_fee_laz,cod_fee_fin,insurance_fee,existence_flag,RateCardMappedFlag,carrying_fee_flag,cod_fee_flag,cod_fee_fin_flag,insurance_fee_flag,status_flag,Duplication_Flag,DuplicationSource
+           medWeight,is_medWeight,calculatedWeight,dest_area,is_OMSPostcode,Min,Max,Rates,cash,carrying_fee_laz,return_fee_laz,cod_fee_laz,cod_fee_fin,insurance_fee,existence_flag,RateCardMappedFlag,carrying_fee_flag,return_fee_flag,cod_fee_flag,cod_fee_fin_flag,insurance_fee_flag,status_flag,Duplication_Flag,DuplicationSource
     )
 
 #   source("02_Codes/01_Load/Load_Invoice_Data.R")

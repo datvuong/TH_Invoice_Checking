@@ -9,6 +9,7 @@ tryCatch({
   load("01_Input/RData/packageDataBased.RData")
   invoiceData <- LoadInvoiceData("01_Input/ACommerce/01_Invoice")
   
+  flog.info("Mapping invoice data and OMS data", name = reportName)
   mergedOMSData <- left_join(invoiceData,
                              packageDataBased,
                              by = "tracking_number")
