@@ -32,7 +32,7 @@ LoadInvoiceData <- function(invoicePath) {
                   "cod_fee", "special_area_fee", "special_handling_fee",
                   "insurance_fee", "vat", "origin_branch",
                   "destination_branch", "delivery_zone_zip_code", "rate_type", 
-                  "delivery_status", "number_packages")
+                  "delivery_status", "number_packages", "project_type")
     fullData <- NULL
     for (ifile in excelFiles) {
 #       if (file_ext(ifile) %in% c("xls", "xlsx")) {
@@ -58,8 +58,8 @@ LoadInvoiceData <- function(invoicePath) {
                                                    "myNumeric", "myNumeric", "myNumeric",
                                                    "myNumeric", "myNumeric", "myNumeric",
                                                    "myNumeric", "myNumeric", "character",
-                                                   "character", "character","character",
-                                                   "character", "myNumeric"))
+                                                   "character", "character", "character",
+                                                   "character", "myNumeric", "character"))
         # }
       
       invoiceFileData %<>%

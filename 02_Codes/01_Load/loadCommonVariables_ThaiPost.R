@@ -38,6 +38,7 @@ suppressMessages({
     CODThreshold <<- commonVarialbes$value[12]
     insuranceFeeRate <<- commonVarialbes$value[13]
     insuranceFeeThreshold <<- commonVarialbes$value[14]
+    returnRate <<- commonVarialbes$value[15]
     
     for (iWarn in warnings()){
       flog.warn(paste(functionName, iWarn), name = reportName)
