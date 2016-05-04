@@ -19,8 +19,8 @@ MapRateCard <- function(mergedOMSData, rateCardFilePath, postalCodePath) {
 #     rateCard <- readWorksheet(object = wb, sheet = 1, colTypes = c(XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.NUMERIC, XLC$DATA_TYPE.NUMERIC,
                                                                    # XLC$DATA_TYPE.NUMERIC))
     rateCard <- read.csv(rateCardFilePath, quote = '"', sep=",", row.names = NULL,
-                         col.names = c("Zone", "Min", "Max", "Rates" ), 
-                         colClasses = c("character","myNumeric", "myNumeric", "myNumeric"))
+                         col.names = c("Zone", "weightCategory", "Rates" ), 
+                         colClasses = c("character","character", "myNumeric"))
 #     wb <- loadWorkbook(postalCodePath)
     # postalCode <- readWorksheet(object = wb, sheet = 1, colTypes = c(XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING))
     postalCode <- read.csv(postalCodePath, quote = '"', sep=",", row.names = NULL,
@@ -53,34 +53,22 @@ MapRateCard <- function(mergedOMSData, rateCardFilePath, postalCodePath) {
 #       mutate(area_revised = ifelse(existence_flag == "NOT_OKAY", NA, area_revised))
     
     mergedOMSData_rev %<>%
-      mutate(Min = ifelse(calculatedWeight <= 1, 0,
-                          ifelse(calculatedWeight <= 1.5, 1,
-                                 ifelse(calculatedWeight <= 2, 1.5,
-                                        ifelse(calculatedWeight <= 2.5, 2,
-                                               ifelse(calculatedWeight <= 3, 2.5, 
-                                                      ifelse(calculatedWeight <= 3.5, 3,
-                                                             ifelse(calculatedWeight <= 4, 3.5,
-                                                                    ifelse(calculatedWeight <= 4.5, 4, 
-                                                                           ifelse(calculatedWeight <= 5, 4.5,
-                                                                                  ifelse(calculatedWeight <= 10, 5,
-                                                                                         ifelse(calculatedWeight <= 15, 10,
-                                                                                                ifelse(calculatedWeight <= 20, 15, 20))))))))))))) %>%
-      mutate(Max = ifelse(calculatedWeight <= 1, 1,
-                          ifelse(calculatedWeight <= 1.5, 1.5,
-                                 ifelse(calculatedWeight <= 2, 2,
-                                        ifelse(calculatedWeight <= 2.5, 2.5,
-                                               ifelse(calculatedWeight <= 3, 3, 
-                                                      ifelse(calculatedWeight <= 3.5, 3.5,
-                                                             ifelse(calculatedWeight <= 4, 4,
-                                                                    ifelse(calculatedWeight <= 4.5, 4.5, 
-                                                                           ifelse(calculatedWeight <= 5, 5,
-                                                                                  ifelse(calculatedWeight <= 10, 10,
-                                                                                         ifelse(calculatedWeight <= 15, 15,
-                                                                                                ifelse(calculatedWeight <= 20, 20, 99)))))))))))))
+      mutate(weightCategory = as.character(ifelse(calculatedWeight <= 1, "w00.0-01.0",
+                          ifelse(calculatedWeight <= 1.5, "w01.0-01.5",
+                                 ifelse(calculatedWeight <= 2, "w01.5-02.0",
+                                        ifelse(calculatedWeight <= 2.5, "w02.0-02.5",
+                                               ifelse(calculatedWeight <= 3, "w02.5-03.0", 
+                                                      ifelse(calculatedWeight <= 3.5, "w03.0-03.5",
+                                                             ifelse(calculatedWeight <= 4, "w03.5-04.0",
+                                                                    ifelse(calculatedWeight <= 4.5, "w04.0-04.5", 
+                                                                           ifelse(calculatedWeight <= 5, "w04.5-05.0",
+                                                                                  ifelse(calculatedWeight <= 10, "w05.0-10.0",
+                                                                                         ifelse(calculatedWeight <= 15, "w10.0-15.0",
+                                                                                                ifelse(calculatedWeight <= 20, "w15.0-20.0", "w20.0-99.0"))))))))))))))
     
     mergedOMSData_rev <- left_join(mergedOMSData_rev, rateCard,
                                    by = c("dest_area" = "Zone",
-                                          "Min", "Max"))
+                                          "weightCategory"))
     
     mergedOMSData_rev %<>%
       mutate(RateCardMappedFlag = ifelse(is.na(Rates), "NOT_OKAY","OKAY"))
