@@ -16,7 +16,7 @@ LoadInvoiceData <- function(invoicePath) {
     
     setClass("myDate")
     setAs("character","myDate", function(from) as.POSIXct(substr(gsub('"','',from), 1, 10),
-                                                          format="%Y-%m-%d"))
+                                                          format="%m/%d/%Y"))
     setClass("myNumeric")
     setAs("character","myNumeric", function(from) as.numeric(gsub('[^0-9\\.]','',from)))
     
@@ -64,7 +64,6 @@ LoadInvoiceData <- function(invoicePath) {
       
       invoiceFileData %<>%
         mutate(package_chargeable_weight = package_weight) %>%
-        mutate(tracking_number = ifelse(substr(tracking_number, 1, 1) == "1", tracking_number_rts, tracking_number)) %>%
         mutate(tracking_number = toupper(tracking_number)) %>%
         mutate(rawFile = ifile)
       

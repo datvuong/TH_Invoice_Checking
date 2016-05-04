@@ -3,12 +3,15 @@ source("02_Codes/00_init.R")
 tryCatch({
   
   flog.info("Initial Setup", name = reportName)
-  
+ #loading data 
   source("02_Codes/01_Load/Load_Invoice_Data.R")
   
   load("01_Input/RData/packageDataBased.RData")
-  invoiceData <- LoadInvoiceData("01_Input/ThaiPost/01_Invoice")
-  
+  invoiceData <- LoadInvoiceData("01_Input/CJ/01_Invoice")
+  invoiceData %<>% 
+    mutate(tracking_number = ifelse(substr(tracking_number, 1, 1) == "6", tracking_number_rts, tracking_number)) 
+#mapping invoice data and oms data
+  flog.info("Mapping invoice data and OMS data", name = reportName)
   mergedOMSData <- left_join(invoiceData,
                              packageDataBased,
                              by = "tracking_number")
@@ -18,15 +21,15 @@ tryCatch({
     mutate(package_number = ifelse(is.na(package_number.y), package_number.x,
                                    package_number.y)) %>%
     select(-c(package_number.x, package_number.y))
-  
+#load historical sku weight data
   setClass("myNumeric")
   setAs("character","myNumeric", function(from) as.numeric(gsub('[^0-9\\.]','',from)))
   
   skusActualWeight <- read.csv(paste0("01_Input/", "skus_actual_weight.csv"), quote = '"', sep=",", row.names = NULL,
                               col.names = c("sku","sum_of_TN","minWeight","maxWeight","medWeight","meanWeight"), 
                               colClasses = c("character", "myNumeric", "myNumeric", "myNumeric", "myNumeric", "myNumeric"))
-  source("02_Codes/01_Load/loadCommonVariables_ThaiPost.R")
-  loadCommonVariables(paste0("01_Input/ThaiPost/", "commonVariables.csv"))
+  source("02_Codes/01_Load/loadCommonVariables_CJ.R")
+  loadCommonVariables(paste0("01_Input/CJ/", "commonVariables.csv"))
   
   mergedOMSData %<>% mutate(sku = substr(skus, 1, 16))
   mergedOMSData <- left_join(mergedOMSData, skusActualWeight %>% select(sku, medWeight), by = c("sku" = "sku"))
@@ -39,13 +42,13 @@ tryCatch({
     mutate(existence_flag = ifelse(!is.na(order_nr), "OKAY", "NOT_OKAY"))
   
   # Map Rate Card
-  source("02_Codes/02_Clean/ThaiPost/ThaiPost_MapRateCard.R")
+  source("02_Codes/02_Clean/CJ/CJ_MapRateCard.R")
   mergedOMSData_rate <- MapRateCard(mergedOMSData, 
-                                    rateCardFilePath =  "01_Input/ThaiPost/05_Ratecards/ThaiPost_rates.csv",
-                                    postalCodePath =  "01_Input/ThaiPost/04_Postalcode/ThaiPost_postalcode.csv")
+                                    rateCardFilePath =  "01_Input/CJ/05_Ratecards/CJ_rates.csv",
+                                    postalCodePath =  "01_Input/CJ/04_Postalcode/CJ_postalcode.csv")
   
   # Rate Calculation 
-  codFinData <- read.csv(paste0("01_Input/ThaiPost/02_COD/", "COD_FinData.csv"), quote = '"', sep=",", row.names = NULL,
+  codFinData <- read.csv(paste0("01_Input/CJ/02_COD/", "COD_FinData.csv"), quote = '"', sep=",", row.names = NULL,
                          col.names = c("tracking_number", "tracking_number_ref", "pickupDate", "destination", 
                                        "cash", "cod_surcharge", "bach_date", "type", "quarter"),
                          colClasses = c("character", "character", "character", "character",
@@ -61,37 +64,25 @@ tryCatch({
   mergedOMSData_rate[,c("paidPrice", "shippingFee", "shippingSurcharge")][is.na(mergedOMSData_rate[,c("paidPrice", "shippingFee", "shippingSurcharge")])] <- 0
   mergedOMSData_rate %<>%
     mutate(carrying_fee_laz = ifelse(weightCategory == "w20-99", (ceiling(calculatedWeight) - 20) * carryingFeeOver20 + Rates, Rates)) %>%
-    mutate(return_fee_laz = ifelse(delivery_status == "Failed delivery" & project_type == "drop off", carrying_fee_laz * returnRate, 0)) %>%
-    mutate(cod_fee_laz = round(ifelse(payment_method == "CashOnDelivery" & (paidPrice + shippingFee + shippingSurcharge) <= CODRate1stBound, CODRate1st,
-                                      ifelse(payment_method == "CashOnDelivery" & (paidPrice + shippingFee + shippingSurcharge) <= CODRate2ndBound, CODRate2nd,
-                                             ifelse(payment_method == "CashOnDelivery" & (paidPrice + shippingFee + shippingSurcharge) <= CODRate3rdBound, CODRate3rd,
-                                                    ifelse(payment_method == "CashOnDelivery" & (paidPrice + shippingFee + shippingSurcharge) <= CODRate4thBound, CODRate4th,
-                                                           ifelse(payment_method == "CashOnDelivery" & (paidPrice + shippingFee + shippingSurcharge) <= CODRate5thBound, CODRate5th,
-                                                                  ifelse(payment_method == "CashOnDelivery" & (paidPrice + shippingFee + shippingSurcharge) <= CODRate6thBound, CODRate6th,
-                                                                         ifelse(payment_method == "CashOnDelivery" & (paidPrice + shippingFee + shippingSurcharge) <= CODRate7thBound, CODRate7th,
-                                                                                NA))))))), 2)) %>%
-    mutate(cod_fee_fin = round(ifelse(cash <= CODRate1stBound, CODRate1st,
-                                      ifelse(cash <= CODRate2ndBound, CODRate2nd,
-                                             ifelse(cash <= CODRate3rdBound, CODRate3rd,
-                                                    ifelse(cash <= CODRate4thBound, CODRate4th,
-                                                           ifelse(cash <= CODRate5thBound, CODRate5th,
-                                                                  ifelse(cash <= CODRate6thBound, CODRate6th,
-                                                                         ifelse(cash <= CODRate7thBound, CODRate7th,
-                                                                                NA))))))), 2)) %>%
+    mutate(overWeight_fee_laz = ifelse(ceiling(calculatedWeight) - 20 > 10, carryingFeeOver30, 0)) %>%
+    mutate(return_fee_laz = ifelse(delivery_status == "Failed delivery", returnRate, 0)) %>%
+    mutate(cod_fee_laz = round(ifelse(payment_method == "CashOnDelivery" & !is.na(delivered), CODRate, NA), 2)) %>%
+    # mutate(cod_fee_fin = round(ifelse(cash <= CODRate1stBound, CODRate1st, cash * CODRate2nd), 2)) %>%
     mutate(insurance_fee_laz = round(paidPrice * insuranceFeeRate,2))
   
   mergedOMSData_rate %<>%
-    mutate(carrying_fee_flag = ifelse(carrying_fee_laz >= carrying_fee, "OKAY", "NOT_OKAY")) %>%
-    mutate(return_fee_flag = ifelse(return_fee_laz >= redelivery_fee, "OKAY", "NOT_OKAY")) %>%
-    mutate(cod_fee_flag = ifelse(round(cod_fee - cod_fee_laz,2) <= CODThreshold , "OKAY", "NOT_OKAY")) %>%
-    mutate(cod_fee_fin_flag = ifelse(round(cod_fee - cod_fee_fin,2) <= CODThreshold, "OKAY", "NOT_OKAY" )) %>%
+    mutate(carrying_fee_flag = ifelse(carrying_fee_laz >= carrying_fee + special_area_fee , "OKAY", "NOT_OKAY")) %>%
+    mutate(overWeight_fee_flag = ifelse(overWeight_fee_laz >= special_handling_fee, "OKAY", "NOT_OKAY")) %>%
+    mutate(return_fee_flag = ifelse(return_fee_laz >= carrying_fee + special_area_fee , "OKAY", "NOT_OKAY")) %>%
+    mutate(cod_fee_flag = ifelse(round(cod_fee - cod_fee_laz,2) <= CODThreshold & !is.na(delivered), "OKAY", "NOT_OKAY")) %>%
+    # mutate(cod_fee_fin_flag = ifelse(round(cod_fee - cod_fee_fin,2) <= CODThreshold, "OKAY", "NOT_OKAY" )) %>%
     mutate(insurance_fee_flag = ifelse(round(insurance_fee - insurance_fee_laz,2) <= insuranceFeeThreshold , "OKAY", "NOT_OKAY" ))
   
   mergedOMSData_rate %<>%
     mutate(status_flag = ifelse(delivery_status == "Delivery" & !is.na(cancelled) & (shipped >= cancelled | is.na(shipped)), "Delivery_Cancelled", 
                                 ifelse(delivery_status == "Failed delivery" & !is.na(delivered), "FailedDelivery_Delivered", "OKAY")))
   
-  paidInvoiceData <- LoadInvoiceData("01_Input/ThaiPost/03_Paid_Invoice")
+  paidInvoiceData <- LoadInvoiceData("01_Input/CJ/03_Paid_Invoice")
   
   paidInvoice <- NULL
   paidInvoiceList <- NULL
@@ -113,13 +104,15 @@ tryCatch({
                                            paidInvoiceList[tracking_number,]$InvoiceFile,"")))
   
   mergedOMSData_final <- mergedOMSData_rate %>%
-    select(line_id,X3pl_name, package_pickup_date,package_pod_date,invoice_number,tracking_number,tracking_number_rts,order_number,package_volume,package_height,package_width,package_length,package_weight.x,package_chargeable_weight,carrying_fee,redelivery_fee,rejection_fee,cod_fee,special_area_fee,special_handling_fee,insurance_fee,vat,origin_branch,destination_branch,delivery_zone_zip_code,rate_type,delivery_status,number_packages,project_type,
+    select(line_id,X3pl_name, package_pickup_date,package_pod_date,invoice_number,tracking_number,tracking_number_rts,order_number,package_volume,package_height,package_width,package_length,package_weight.x,package_chargeable_weight,carrying_fee,redelivery_fee,rejection_fee,cod_fee,special_area_fee,special_handling_fee,insurance_fee,vat,origin_branch,destination_branch,delivery_zone_zip_code,rate_type,delivery_status,number_packages,
            order_nr, unit_price,itemsCount,paidPrice,shippingFee,shippingSurcharge,sku,skus,volumetricDimension,actualWeight,payment_method,package_number,shipped,cancelled,delivered,being_returned,rts,Seller_Code,Seller,tax_class,shipment_provider_name,postcode,seller_postcode,origineName,
-           medWeight,is_medWeight,calculatedWeight,dest_area,is_OMSPostcode,Min,Max,Rates,cash,carrying_fee_laz,return_fee_laz,cod_fee_laz,cod_fee_fin,insurance_fee,existence_flag,RateCardMappedFlag,carrying_fee_flag,return_fee_flag,cod_fee_flag,cod_fee_fin_flag,insurance_fee_flag,status_flag,Duplication_Flag,DuplicationSource
+           medWeight,is_medWeight,calculatedWeight,dest_area,is_OMSPostcode,weightCategory,Rates,cash,
+           carrying_fee_laz,overWeight_fee_laz,return_fee_laz,cod_fee_laz,insurance_fee,
+           existence_flag,RateCardMappedFlag,carrying_fee_flag,overWeight_fee_flag,return_fee_flag,cod_fee_flag,insurance_fee_flag,status_flag,Duplication_Flag,DuplicationSource
     )
 
 #   source("02_Codes/01_Load/Load_Invoice_Data.R")
-#   CODData <- LoadInvoiceData("01_Input/ThaiPost/02_COD")
+#   CODData <- LoadInvoiceData("01_Input/CJ/02_COD")
   
   flog.info("Writing Result to csv format!!!", name = reportName)
   # source("02_Codes/04_Reports/SummaryReport.R")
@@ -134,17 +127,17 @@ tryCatch({
 #     filter(manualCheck == "NOT_FOUND") %>%
 #     select(deliveryCompany, trackingNumber, Seller_Code)
   
-  OutputRawData(mergedOMSData_final, paste0("05_Output/ThaiPost/checkedInvoice_",dateReport,".csv"))
+  OutputRawData(mergedOMSData_final, paste0("05_Output/CJ/checkedInvoice_",dateReport,".csv"))
 #   OutputRawData(exceedThresholdTrackingNumber, paste0("2_Output/gdex/exceedThresholdTrackingNumber_",dateReport,".csv"))
 #   OutputRawData(notFoundTrackingNumber, paste0("2_Output/gdex/notFoundTrackingNumber_",dateReport,".csv"))
-  # SummaryReport(mergedOMSData_final, paste0("05_Output/ThaiPost/summaryReport_",dateReport,".csv"))
+  # SummaryReport(mergedOMSData_final, paste0("05_Output/CJ/summaryReport_",dateReport,".csv"))
   
   
 #   invoiceFiles <- unique(mergedOMSData_final$rawFile)
 #   for (iFile in invoiceFiles) {
 #     fileName <- gsub(".xls.*$", "_checked.csv", iFile)
 #     fileData <-  as.data.frame(mergedOMSData_final %>% filter(rawFile == iFile))
-#     write.csv(fileData, file.path("05_Output/ThaiPost", fileName),
+#     write.csv(fileData, file.path("05_Output/CJ", fileName),
 #                row.names = FALSE)
 #   }
   
