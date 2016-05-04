@@ -20,7 +20,11 @@ tryCatch({
   mergedOMSData %<>%
     mutate(package_number = ifelse(is.na(package_number.y), package_number.x,
                                    package_number.y)) %>%
-    select(-c(package_number.x, package_number.y))
+    select(-c(package_number.x, package_number.y)) %>%
+    replace_na(list(carrying_fee=0, redelivery_fee=0, rejection_fee=0,
+                    cod_fee=0, special_area_fee=0, special_handling_fee=0,
+                    insurance_fee=0))
+  
 #load historical sku weight data
   setClass("myNumeric")
   setAs("character","myNumeric", function(from) as.numeric(gsub('[^0-9\\.]','',from)))

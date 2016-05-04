@@ -60,7 +60,7 @@ tryCatch({
   mergedOMSData_rate <- left_join(mergedOMSData_rate, codFinData, by = c("tracking_number" = "tracking_number"))
   mergedOMSData_rate[,c("paidPrice", "shippingFee", "shippingSurcharge")][is.na(mergedOMSData_rate[,c("paidPrice", "shippingFee", "shippingSurcharge")])] <- 0
   mergedOMSData_rate %<>%
-    mutate(carrying_fee_laz = ifelse(Max == 99, (ceiling(calculatedWeight) - 20) * carryingFeeOver20 + Rates, Rates)) %>%
+    mutate(carrying_fee_laz = ifelse(weightCategory == "w20-99", (ceiling(calculatedWeight) - 20) * carryingFeeOver20 + Rates, Rates)) %>%
     mutate(cod_fee_laz = round(ifelse(payment_method == "CashOnDelivery",
                                       (paidPrice + shippingFee + shippingSurcharge) * CODRate, 0), 2)) %>%
     mutate(cod_fee_fin = round(cash * CODRate, 2)) %>%
@@ -74,7 +74,7 @@ tryCatch({
   
   mergedOMSData_rate %<>%
     mutate(status_flag = ifelse(delivery_status == "Delivery" & !is.na(cancelled) & (shipped >= cancelled | is.na(shipped)), "Delivery_Cancelled", 
-                                ifelse(delivery_status == "Return" & !is.na(delivered), "Return_Delivered", "OKAY")))
+                                ifelse(delivery_status == "Failed delivery" & !is.na(delivered), "FailedDelivery_Delivered", "OKAY")))
   
   paidInvoiceData <- LoadInvoiceData("01_Input/LEX/03_Paid_Invoice")
   
