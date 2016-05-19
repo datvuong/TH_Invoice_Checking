@@ -5,6 +5,7 @@ tryCatch({
   flog.info("Initial Setup", name = reportName)
   
   source("02_Codes/01_Load/Load_Invoice_Data.R")
+  source("02_Codes/01_Load/Load_FinCOD_Data.R")
   
   load("01_Input/RData/packageDataBased.RData")
   invoiceData <- LoadInvoiceData("01_Input/Kerry/01_Invoice")
@@ -46,11 +47,7 @@ tryCatch({
                                     postalCodePath =  "01_Input/Kerry/04_Postalcode/Kerry_postalcode.csv")
   
   # Rate Calculation 
-  codFinData <- read.csv(paste0("01_Input/Kerry/02_COD/", "COD_FinData.csv"), quote = '"', sep=",", row.names = NULL,
-                         col.names = c("tracking_number", "tracking_number_ref", "pickupDate", "destination", 
-                                       "cash", "cod_surcharge", "bach_date", "type", "quarter"),
-                         colClasses = c("character", "character", "character", "character",
-                                        "myNumeric", "myNumeric", "character", "character", "character"))
+  codFinData <- LoadFinCODData("01_Input/Kerry/02_COD")
   
   codFinData %<>% 
     mutate(tracking_number = ifelse(substr(tracking_number, 1, 1) == "1", tracking_number_ref, tracking_number)) %>%
