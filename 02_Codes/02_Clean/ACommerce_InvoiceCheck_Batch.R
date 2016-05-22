@@ -56,7 +56,7 @@ tryCatch({
                                         "myNumeric", "myNumeric", "character", "character", "character"))
   
   codFinData %<>% 
-    mutate(tracking_number = ifelse(substr(tracking_number, 1, 1) == "1", tracking_number_ref, tracking_number)) %>%
+    # mutate(tracking_number = ifelse(substr(tracking_number, 1, 1) == "1", tracking_number_ref, tracking_number)) %>%
     mutate(tracking_number = toupper(tracking_number)) %>%
     group_by(tracking_number) %>%
     summarise(cash = sum(cash))

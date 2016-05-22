@@ -68,6 +68,7 @@ tryCatch({
   mergedOMSData_rate[,c("paidPrice", "shippingFee", "shippingSurcharge")][is.na(mergedOMSData_rate[,c("paidPrice", "shippingFee", "shippingSurcharge")])] <- 0
   mergedOMSData_rate %<>%
     mutate(carrying_fee_laz = ifelse(weightCategory == "w20-99", (ceiling(calculatedWeight) - 20) * carryingFeeOver20 + Rates, Rates)) %>%
+    mutate(redelivery_fee_laz = ifelse(dest_area == "Remote area", carrying_fee_laz -150, carrying_fee_laz) * (number_packages - 1)) %>%  # number of packages is storing number of attempts
     mutate(overWeight_fee_laz = ifelse(ceiling(calculatedWeight) - 20 > 10, carryingFeeOver30, 0)) %>%
     mutate(return_fee_laz = ifelse(delivery_status == "Failed delivery", returnRate, 0)) %>%
     mutate(cod_fee_laz = round(ifelse(payment_method == "CashOnDelivery" & !is.na(delivered), CODRate, NA), 2)) %>%
@@ -76,6 +77,7 @@ tryCatch({
   
   mergedOMSData_rate %<>%
     mutate(carrying_fee_flag = ifelse(carrying_fee_laz >= carrying_fee + special_area_fee , "OKAY", "NOT_OKAY")) %>%
+    mutate(redelivery_fee_flag = ifelse(redelivery_fee_laz >= redelivery_fee, "OKAY", "NOT_OKAY" )) %>%
     mutate(overWeight_fee_flag = ifelse(overWeight_fee_laz >= special_handling_fee, "OKAY", "NOT_OKAY")) %>%
     mutate(return_fee_flag = ifelse(return_fee_laz >= carrying_fee + special_area_fee , "OKAY", "NOT_OKAY")) %>%
     mutate(cod_fee_flag = ifelse(round(cod_fee - cod_fee_laz,2) <= CODThreshold & !is.na(delivered), "OKAY", "NOT_OKAY")) %>%

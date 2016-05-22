@@ -10,7 +10,7 @@ LoadInvoiceData <- function(invoicePath) {
   })
   
   functionName <- "LoadInvoiceData"
-  flog.info(paste("Function", functionName, "started"), name = reportName)
+  flog.info(paste("Function", functionName, invoicePath, "started"), name = reportName)
   
   output <- tryCatch({
     
