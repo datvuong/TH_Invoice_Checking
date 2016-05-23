@@ -91,7 +91,6 @@ tryCatch({
   paidInvoiceData <- LoadInvoiceData("01_Input/CJ/03_Paid_Invoice")
   paidInvoice <- NULL
   paidInvoiceList <- NULL
-  
   if (!is.null(paidInvoiceData)) {
     paidInvoiceData %<>%
       mutate(tracking_number = ifelse(substr(tracking_number, 1, 1) == "6", tracking_number_rts, tracking_number)) 	
