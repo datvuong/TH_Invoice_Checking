@@ -53,7 +53,8 @@ MapRateCard <- function(mergedOMSData, rateCardFilePath, postalCodePath) {
 #       mutate(area_revised = ifelse(existence_flag == "NOT_OKAY", NA, area_revised))
     
     mergedOMSData_rev %<>%
-      mutate(weightCategory = as.character(ifelse(calculatedWeight <= 1, "w00.0-01.0",
+      mutate(weightCategory = as.character(ifelse(calculatedWeight <= 0.5, "w00.0-00.5",
+                      ifelse(calculatedWeight <= 1, "w00.5-01.0",
                           ifelse(calculatedWeight <= 1.5, "w01.0-01.5",
                                  ifelse(calculatedWeight <= 2, "w01.5-02.0",
                                         ifelse(calculatedWeight <= 2.5, "w02.0-02.5",
@@ -64,7 +65,7 @@ MapRateCard <- function(mergedOMSData, rateCardFilePath, postalCodePath) {
                                                                            ifelse(calculatedWeight <= 5, "w04.5-05.0",
                                                                                   ifelse(calculatedWeight <= 10, "w05.0-10.0",
                                                                                          ifelse(calculatedWeight <= 15, "w10.0-15.0",
-                                                                                                ifelse(calculatedWeight <= 20, "w15.0-20.0", "w20.0-99.0"))))))))))))))
+                                                                                                ifelse(calculatedWeight <= 20, "w15.0-20.0", "w20.0-99.0")))))))))))))))
     
     mergedOMSData_rev <- left_join(mergedOMSData_rev, rateCard,
                                    by = c("dest_area" = "Zone",
