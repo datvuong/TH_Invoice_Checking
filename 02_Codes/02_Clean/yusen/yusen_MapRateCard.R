@@ -16,21 +16,11 @@ MapRateCard <- function(mergedOMSData, rateCardFilePath, postalCodePath) {
     setClass("myNumeric")
     setAs("character","myNumeric", function(from) as.numeric(gsub('[^0-9\\.]','',from)))
     
-#     wb <- loadWorkbook(rateCardFilePath)  
-#     rateCard <- readWorksheet(object = wb, sheet = 1, colTypes = c(XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.NUMERIC, XLC$DATA_TYPE.NUMERIC,
-                                                                   # XLC$DATA_TYPE.NUMERIC))
-    rateCard <- read.csv(rateCardFilePath, quote = '"', sep=",", header = TRUE)
-#     wb <- loadWorkbook(postalCodePath)
-    # postalCode <- readWorksheet(object = wb, sheet = 1, colTypes = c(XLC$DATA_TYPE.STRING, XLC$DATA_TYPE.STRING))
+    rateCard <- read.csv(rateCardFilePath, quote = '"', sep=",", header = TRUE, colClasses = c("min" = "character", "max" = "character"))
     postalCode <- read.csv(postalCodePath, quote = '"', sep=",", header = TRUE,
                            colClasses = c( "postal_code" = "character"))
     rateCard <- rateCard[,c("min","max",paste0(id3PL, "_A"),paste0(id3PL, "_B"),paste0(id3PL, "_C"))]
     postalCode <- postalCode[,c("postal_code", id3PL)]
-#     mergedOMSData_rev <- left_join(mergedOMSData, 
-#                                    postalCode ,
-#                                    by = c("origin_branch" = "postal_code"))
-#     mergedOMSData_rev %<>% mutate(origin_area = area) %>%
-#       select(-c(area))
     
     mergedOMSData %<>% 
       mutate(is_OMSPostcode = ifelse(is.na(postcode), 0, 1)) %>%
@@ -43,20 +33,14 @@ MapRateCard <- function(mergedOMSData, rateCardFilePath, postalCodePath) {
       mutate(minWeight = ifelse(round(calculatedWeight,2) <= 0, 0, 
                                 ifelse(round(calculatedWeight,2) <= 2, maxWeight - 0.1,
                                        ifelse(round(calculatedWeight,2) <= 5, maxWeight - 0.5,
-                                              ifelse(round(calculatedWeight,2) <= 20,maxWeight - 5,maxWeight-1 )))))
+                                              ifelse(round(calculatedWeight,2) <= 20,maxWeight - 5,maxWeight-1 ))))) %>%
+      mutate(maxWeight = as.character(maxWeight)) %>%
+      mutate(minWeight = as.character(minWeight))
     
     mergedOMSData_rev <- left_join(mergedOMSData, 
                                    postalCode ,
                                    by = c("postcode" = "postal_code"))
     names(mergedOMSData_rev) <- gsub(id3PL, "dest_area", names(mergedOMSData_rev))
-#     
-#     mergedOMSData_rev %<>% mutate(area_revised = ifelse(origin_area == "Greater Bangkok" & dest_area == "Greater Bangkok", "Greater Bangkok", 
-#                                                         ifelse(origin_area == "Remote area" | dest_area == "Remote area", "Remote area", 
-#                                                                ifelse(origin_area == "Upcountry" | dest_area == "Upcountry", "Upcountry", NA))))
-    
-#     mergedOMSData_rev %<>%
-#       # mutate(area_revised = ifelse(is.na(area_revised), "Zone_B", area_revised)) %>%
-#       mutate(area_revised = ifelse(existence_flag == "NOT_OKAY", NA, area_revised))
     
     mergedOMSData_rev <- left_join(mergedOMSData_rev, rateCard,
                                    by = c("minWeight" = "min", "maxWeight" = "max"))
@@ -67,6 +51,14 @@ MapRateCard <- function(mergedOMSData, rateCardFilePath, postalCodePath) {
                                    ifelse(dest_area == "Remote area", mergedOMSData_rev[,paste0(id3PL, "_C")],NA)))) %>%
       mutate(RateCardMappedFlag = ifelse(is.na(Rates), "NOT_OKAY","OKAY"))
     # mergedOMSData_rev <- mergedOMSData_rev[,- c(paste0(id3PL, "_A"),paste0(id3PL, "_B"),paste0(id3PL, "_C"))]
+    # Rate Calculation 
+    mergedOMSData_rev[,c("paidPrice", "shippingFee", "shippingSurcharge")][is.na(mergedOMSData_rev[,c("paidPrice", "shippingFee", "shippingSurcharge")])] <- 0
+    mergedOMSData_rev %<>%
+      mutate(carrying_fee_laz = Rates) %>%
+      mutate(return_fee_laz = ifelse(delivery_status == deliveryStatus2, Rates, 0)) %>%
+      mutate(cod_fee_laz = round(ifelse(payment_method == "CashOnDelivery" & !is.na(delivered), ifelse((paidPrice + shippingFee + shippingSurcharge) <= CODRate1stUpperBound, CODRate1st,(paidPrice + shippingFee + shippingSurcharge) * CODRate), NA), 2)) %>%
+      mutate(cod_fee_fin = round(cash * CODRate, 2)) %>%
+      mutate(insurance_fee_laz = round(paidPrice * insuranceFeeRate,2))
     
     mergedOMSData_rev
     
