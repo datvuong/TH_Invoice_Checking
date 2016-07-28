@@ -100,7 +100,7 @@ LoadFinCODData <- function(FinCODPath) {
     
     subData <- NULL
     excelFiles <- list.files(FinCODPath, pattern = "*.csv")
-    colNames <- c("tracking_number", "tracking_number_ref", "pickupDate", "destination", 
+    colNames <- c("tracking_number", "tracking_number_rts", "pickupDate", "destination", 
                   "cash", "cod_surcharge", "bach_date", "type", "quarter")
     for (ifile in excelFiles) {
       subData <- read.csv(file.path(FinCODPath, ifile), quote = '"', sep=",", row.names = NULL,

@@ -31,9 +31,9 @@ fn_dataFix <- function(input_data, id3PL) {
   flog.info(paste("Function", functionName, "started"), name = reportName)
 
   output <- tryCatch({
-    if (id3PL == "Kerry") {
+    if (id3PL == "kerry") {
       input_data %<>% 
-        mutate(tracking_number = ifelse(substr(tracking_number, 1, 1) == "1", tracking_number_ref, tracking_number)) %>%
+        mutate(tracking_number = ifelse(substr(tracking_number, 1, 1) == "1", tracking_number_rts, tracking_number)) %>%
         mutate(tracking_number = toupper(tracking_number))
     } 
     input_data %<>%
