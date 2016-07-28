@@ -52,7 +52,7 @@ MapRateCard <- function(mergedOMSData, rateCardFilePath, postalCodePath) #, CODR
                                               ifelse(round(calculatedWeight,2) <= 20,maxWeight - 5,maxWeight-1 ))))) %>%
       mutate(maxWeight = as.character(maxWeight)) %>%
       mutate(minWeight = as.character(minWeight))
-    
+    flog.info(paste("Function", functionName, "_Mapping Postal code"), name = reportName)
     mergedOMSData_rev <- left_join(mergedOMSData, 
                                    postalCode ,
                                    by = c("origin_branch" = "postal_code"))
@@ -86,7 +86,7 @@ MapRateCard <- function(mergedOMSData, rateCardFilePath, postalCodePath) #, CODR
     mergedOMSData_rev %<>% mutate(area_revised = ifelse(origin_area == "Greater Bangkok" & dest_area == "Greater Bangkok", "Greater Bangkok", 
                                                         ifelse(origin_area == "Remote area" | dest_area == "Remote area", "Remote area", 
                                                                ifelse(origin_area == "Upcountry" | dest_area == "Upcountry", "Upcountry", NA))))
-    
+    flog.info(paste("Function", functionName, "_Mapping Ratecard"), name = reportName)
     mergedOMSData_rev <- left_join(mergedOMSData_rev, rateCard,
                                    by = c("minWeight" = "min", "maxWeight" = "max"))
     
